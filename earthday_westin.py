@@ -258,9 +258,12 @@ def main():
             background-color: white;
             border-radius: 0.75rem;
             padding: 1.25rem 1rem;
-            height: 150px; /* Fixed height for all cards */
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             text-align: center;
+            height: 150px; /* Fixed height for all cards */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             border: 1px solid #f0f0f0;
             transition: transform 0.2s;
             margin-bottom: 0.5rem;
@@ -287,7 +290,7 @@ def main():
         .negative-change {
             color: #dc2626;
         }
-        
+
         /* Charts row styling */
         .charts-section {
             margin-bottom: 2rem;
