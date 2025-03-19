@@ -253,44 +253,54 @@ def main():
         #     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         # }
         
-        /* KPI card styling */
-        .kpi-card {
+
+        .card {
             background-color: white;
             border-radius: 0.75rem;
-            padding: 1.25rem 1rem;
+            padding: 1.5rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            text-align: center;
-            height: 150px; /* Fixed height for all cards */
+            border: 1px solid #f0f0f0;
+            margin-bottom: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 200px; /* Fixed height for all cards */
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            border: 1px solid #f0f0f0;
-            transition: transform 0.2s;
-            margin-bottom: 0.5rem;
+            justify-content: space-between; /* Distribute space evenly */
         }
-        .kpi-card:hover {
+        .card:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(0,0,0,0.1);
         }
-        .kpi-value {
+        /* Custom metric styling */
+        .metric-label {
+            font-size: 1rem;
+            color: #6B7280;
+            margin-bottom: 0.5rem;
+        }
+        .metric-value {
             font-size: 2.25rem;
             font-weight: 700;
+            color: #1F2937;
             margin: 0.6rem 0;
-            line-height: 1.2;
         }
-        .kpi-label {
+        .metric-delta {
             font-size: 0.95rem;
+            color: #059669; /* Green for positive change */
+            font-weight: 600; /* Make the text bolder */
+            padding: 0.25rem 0.5rem;
+            background-color: #ECFDF5; /* Light green background */
+            border-radius: 0.5rem;
+            display: inline-block; /* Ensure the background only covers the text */
+        }
+        .metric-delta.negative {
+            color: #dc2626; /* Red for negative change */
+            background-color: #FEE2E2; /* Light red background */
+        }
+        .metric-caption {
+            font-size: 0.9rem;
             color: #6B7280;
-            margin: 0;
-            line-height: 1.4;
+            margin-top: 0.5rem;
         }
-        .positive-change {
-            color: #059669;
-        }
-        .negative-change {
-            color: #dc2626;
-        }
-
         /* Charts row styling */
         .charts-section {
             margin-bottom: 2rem;
@@ -545,50 +555,66 @@ def main():
     kpis = get_comparison_kpis(data, current_start, current_end, compare_start, compare_end)
     
     # KPI section with improved container
+# KPI section using st.metric
+
+
+    # KPI section using custom HTML metrics inside cards
+    # KPI section using custom HTML metrics inside cards
     st.markdown('<div class="kpi-section">', unsafe_allow_html=True)
-    # KPI row
     kpi_cols = st.columns(4)
 
     with kpi_cols[0]:
-        change_color = "positive-change" if kpis['percent_change'] < 0 else "negative-change"
+        # For percent change, negative is bad (increase in usage), positive is good (reduction in usage)
+        change_color = "negative" if kpis['percent_change'] > 0 else ""
         st.markdown(f"""
-        <div class="kpi-card">
-            <p class="kpi-label">COMPARED TO LAST YEAR</p>
-            <p class="kpi-value {change_color}">{abs(kpis['percent_change']):.1f}%</p>
-            <p class="kpi-label">{"REDUCTION" if kpis['percent_change'] < 0 else "INCREASE"}</p>
+        <div class="card">
+            <div>
+                <p class="metric-label">📊 COMPARED TO LAST YEAR</p>
+                <p class="metric-value">{abs(kpis['percent_change']):.1f}%</p>
+                <p class="metric-delta {change_color}">{"INCREASE" if kpis['percent_change'] > 0 else "REDUCTION"}</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
     with kpi_cols[1]:
+        # Energy saved is always positive and good
         st.markdown(f"""
-        <div class="kpi-card">
-            <p class="kpi-label">ENERGY SAVED</p>
-            <p class="kpi-value positive-change">{kpis['kwh_saved']:,.0f} kWh</p>
-            <p class="kpi-label">VS SAME PERIOD LAST YEAR</p>
+        <div class="card">
+            <div>
+                <p class="metric-label">💡 ENERGY SAVED</p>
+                <p class="metric-value">{kpis['kwh_saved']:,.0f} kWh</p>
+                <p class="metric-delta">VS SAME PERIOD LAST YEAR</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
     with kpi_cols[2]:
+        # CO₂ prevented is always positive and good
         st.markdown(f"""
-        <div class="kpi-card">
-            <p class="kpi-label">CO₂ PREVENTED</p>
-            <p class="kpi-value positive-change">{kpis['co2_saved']:,.0f} kg</p>
+        <div class="card">
+            <div>
+                <p class="metric-label">🌍 CO₂ PREVENTED</p>
+                <p class="metric-value">{kpis['co2_saved']:,.0f} kg</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
     with kpi_cols[3]:
+        # For daily average, negative change is bad (increase), positive is good (reduction)
         daily_change = ((kpis['current_daily_avg'] - kpis['compare_daily_avg']) / kpis['compare_daily_avg']) * 100
-        daily_change_color = "positive-change" if daily_change < 0 else "negative-change"
+        change_color = "negative" if daily_change > 0 else ""
         st.markdown(f"""
-        <div class="kpi-card">
-            <p class="kpi-label">DAILY AVERAGE</p>
-            <p class="kpi-value">{kpis['current_daily_avg']:,.0f} kWh</p>
-            <p class="kpi-label {daily_change_color}">({abs(daily_change):.1f}% vs last year)</p>
+        <div class="card">
+            <div>
+                <p class="metric-label">📅 DAILY AVERAGE</p>
+                <p class="metric-value">{kpis['current_daily_avg']:,.0f} kWh</p>
+                <p class="metric-delta {change_color}">{abs(daily_change):.1f}% vs last year</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Green Champion Section
     st.markdown('<div class="section-container">', unsafe_allow_html=True)
     st.markdown('<h3 class="section-title">Green Champion</h3>', unsafe_allow_html=True)
 
