@@ -310,7 +310,7 @@ def main():
     # Header
     st.markdown("""
     <div class="header-container">
-        <h1 class="header-title">🌍 CIV Earth Day Energy Dashboard</h1>
+        <h1 class="header-title">🌍 Comfort Inn Edgware Earth Day Energy Dashboard</h1>
         <p class="header-subtitle">Power Up Initiative | April 2025</p>
     </div>
     """, unsafe_allow_html=True)
