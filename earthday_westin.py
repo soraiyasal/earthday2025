@@ -1160,7 +1160,7 @@ def main():
             
             st.markdown(f"""
             <div class="card">
-                <p class="metric-label">🎯 PROGRESS TO {target_percentage}% SAVINGS GOAL</p>
+                <p class="metric-label">🎯{target_percentage}% SAVINGS GOAL</p>
                 <div class="progress-container">
                     <div class="progress-bar" style="width: {progress_towards_target}%;"></div>
                 </div>
