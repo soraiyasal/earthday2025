@@ -1541,15 +1541,15 @@ def main():
         }
         
         /* Chart container */
-        .chart-container {
-            background-color: white;
-            border-radius: 0.4rem;
-            padding: 0.6rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #e9f3fc;  /* Light Westin blue */
-            height: 290px;
-            margin-bottom: 0.5rem;
-        }
+        # .chart-container {
+        #     background-color: white;
+        #     border-radius: 0.4rem;
+        #     padding: 0.6rem;
+        #     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        #     border: 1px solid #e9f3fc;  /* Light Westin blue */
+        #     height: 290px;
+        #     margin-bottom: 0.5rem;
+        # }
         
         /* Make chart container explicitly not commented out since original had commented versions */
         # .chart-container {
@@ -1628,14 +1628,14 @@ def main():
         # }
         
         /* Make feedback container explicitly not commented out since original had commented versions */
-        .feedback-container {
-            background-color: white;
-            border-radius: 0.4rem;
-            padding: 0.6rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #e9f3fc;  /* Light Westin blue */
-            height: 290px;
-        }
+        # .feedback-container {
+        #     background-color: white;
+        #     border-radius: 0.4rem;
+        #     padding: 0.6rem;
+        #     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        #     border: 1px solid #e9f3fc;  /* Light Westin blue */
+        #     height: 290px;
+        # }
         .feedback-title {
             font-size: 0.85rem;
             margin-top: 0;
