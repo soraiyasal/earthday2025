@@ -480,7 +480,7 @@ def main():
         .card {
             background-color: white;
             border-radius: 0.4rem;
-            padding: 1rem;
+            padding: 0.6rem 0.8rem; /* Increase horizontal padding */
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             border: 1px solid #e9f3fc;
             height: 110px !important;
@@ -491,43 +491,51 @@ def main():
             overflow: hidden;
         }
         
-        /* More space for the icon and label */
+        /* Fix truncation issues with labels */
         .metric-label {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #006c93; 
-            margin-bottom: 0.4rem;
+            font-size: 0.9rem; /* Slightly larger */
+            color: #006c93;
+            margin-bottom: 0.3rem;
             font-family: 'Georgia', serif;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal !important; /* Allow wrapping */
+            overflow: visible !important; /* Show overflow */
+            text-overflow: clip !important; /* Don't use ellipsis */
+            display: block !important; /* Remove webkit line clamp */
+            -webkit-line-clamp: unset !important;
+            -webkit-box-orient: unset !important;
+            line-height: 1.2;
+            max-height: none !important;
         }
         
-        /* Larger, more prominent value */
+        /* Fix truncation issues with values */
         .metric-value {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            color: #333;
-            margin: 0.3rem 0;
+            color: #3b3b3b;
+            margin: 0.2rem 0;
             font-family: 'Georgia', serif;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal !important; /* Allow wrapping */
+            overflow: visible !important; /* Show overflow */
+            text-overflow: clip !important; /* Don't use ellipsis */
+            line-height: 1.2;
+            max-height: none !important;
         }
         
-        /* Better styled delta indicator */
+        /* Fix truncation issues with delta indicators */
         .metric-delta {
             font-size: 0.8rem;
             color: #007a3e;
             font-weight: 600;
-            padding: 0.3rem 0.5rem;
+            padding: 0.2rem 0.4rem;
             background-color: #e9f7ef;
             border-radius: 0.25rem;
-            display: inline-block;
+            display: block !important; /* Make it block to take full width */
+            overflow: visible !important; /* Show overflow */
+            text-overflow: clip !important; /* Don't use ellipsis */
+            white-space: normal !important; /* Allow wrapping */
             max-width: 100%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            line-height: 1.2;
+            max-height: none !important;
         }
         .metric-delta.negative {
             color: #c25450;  /* Westin accent red for negative change */
@@ -715,28 +723,27 @@ def main():
             }
             
             /* Adjusted card height for mobile */
-            .card {
-                padding: 0.8rem;
-                height: 100px !important;
-            }
-            
+
             .champion-container {
                 height: 100px !important; /* Match card height on mobile */
             }
             
+            .card {
+                background-color: #1e2a38;
+                border-color: #006c93;
+            }
+            
             .metric-label {
-                font-size: 0.9rem;
-                margin-bottom: 0.2rem;
+                color: #8abed3;
             }
             
             .metric-value {
-                font-size: 1.3rem;
-                margin: 0.2rem 0;
+                color: #ffffff;
             }
             
             .metric-delta {
-                font-size: 0.75rem;
-                padding: 0.2rem 0.4rem;
+                background-color: rgba(233, 247, 239, 0.1);
+                color: #4caf50;
             }
                 
             .champion-info p {
