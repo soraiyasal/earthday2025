@@ -1258,6 +1258,21 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     # Calculate CO2 impact
     co2_saved = (compare_total - current_total) * ELECTRICITY_FACTOR
     
+    # Calculate per-guest usage (with average of 235 guests per night)
+    avg_guests = 235
+    guest_usage = current_total / (len(current_data) * avg_guests)
+    
+    # Add context to CO2 saved - trees equivalent
+    # Average tree absorbs about 22 kg of CO2 per year
+    # Source: UK Forestry Commission approximate figures
+    trees_equivalent = int(co2_saved / 22)
+    
+    # Calculate progress toward 10% savings goal
+    target_savings_percent = 10
+    target_usage = compare_total * (1 - target_savings_percent/100)
+    progress_percentage = min(100, max(0, ((compare_total - current_total) / (compare_total - target_usage)) * 100))
+    remaining_kwh = max(0, current_total - target_usage)
+    
     # Include match quality metrics
     return {
         'current_total': current_total,
@@ -1269,7 +1284,12 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         'kwh_saved': max(0, compare_total - current_total),
         'matched_day_count': matched_data['matched_day_count'],
         'expected_day_count': matched_data['expected_day_count'],
-        'match_percentage': matched_data['match_percentage']
+        'match_percentage': matched_data['match_percentage'],
+        'guest_usage': guest_usage,
+        'progress_percentage': progress_percentage,
+        'remaining_kwh': remaining_kwh,
+        'target_savings_percent': target_savings_percent,
+        'trees_equivalent': trees_equivalent
     }
 
 # Get compare dates from previous year
@@ -1420,7 +1440,7 @@ def get_hourly_chart(data, current_start, current_end):
 
 # Main dashboard
 def main():
-    # Load custom CSS with Westin branding
+    # Load custom CSS with Westin branding and responsive design
     st.markdown("""
     <style>
         /* Main header styling */
@@ -1436,6 +1456,14 @@ def main():
             justify-content: space-between;
             align-items: center;
         }
+        /* Westin logo style in header */
+        .westin-header-logo {
+            height: 40px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        /* Header title with logo styling */
         .header-title {
             font-size: 1.6rem;
             font-weight: 700;
@@ -1444,8 +1472,10 @@ def main():
             flex-grow: 1;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
             letter-spacing: 0.5px;
-            background-colour: #006c93
+            background-colour: #006c93;
             font-family: 'Georgia', serif;  /* Westin uses a serif font */
+            display: flex;
+            align-items: center;
         }
         .period-selector {
             width: 180px;
@@ -1507,6 +1537,20 @@ def main():
             background-color: #fdf2f0;
         }
         
+        /* Progress bar styling */
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background-color: #e9f3fc;
+            border-radius: 5px;
+            margin-top: 0.2rem;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 5px;
+            background-color: #006c93;
+        }
+        
         /* Champion styling */
         .champion-container {
             background-color: #e9f3fc;  /* Light Westin blue */
@@ -1540,27 +1584,7 @@ def main():
             font-family: 'Georgia', serif;
         }
         
-        /* Chart container */
-        # .chart-container {
-        #     background-color: white;
-        #     border-radius: 0.4rem;
-        #     padding: 0.6rem;
-        #     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        #     border: 1px solid #e9f3fc;  /* Light Westin blue */
-        #     height: 290px;
-        #     margin-bottom: 0.5rem;
-        # }
-        
-        /* Make chart container explicitly not commented out since original had commented versions */
-        # .chart-container {
-        #     background-color: white;
-        #     border-radius: 0.4rem;
-        #     padding: 0.6rem;
-        #     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        #     border: 1px solid #e9f3fc;  /* Light Westin blue */
-        #     height: 290px;
-        #     margin-bottom: 0.5rem;
-        # }
+        /* Chart title styling */
         .chart-title {
             font-size: 0.85rem;
             margin-top: 0;
@@ -1617,25 +1641,7 @@ def main():
             font-family: 'Georgia', serif;
         }
         
-        /* Feedback styling */
-        # .feedback-container {
-        #     background-color: white;
-        #     border-radius: 0.4rem;
-        #     padding: 0.6rem;
-        #     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        #     border: 1px solid #e9f3fc;  /* Light Westin blue */
-        #     height: 290px;
-        # }
-        
-        /* Make feedback container explicitly not commented out since original had commented versions */
-        # .feedback-container {
-        #     background-color: white;
-        #     border-radius: 0.4rem;
-        #     padding: 0.6rem;
-        #     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        #     border: 1px solid #e9f3fc;  /* Light Westin blue */
-        #     height: 290px;
-        # }
+        /* Feedback title styling */
         .feedback-title {
             font-size: 0.85rem;
             margin-top: 0;
@@ -1668,10 +1674,13 @@ def main():
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         
-        /* Responsive layout */
+        /* Responsive adjustments for logo in header */
         @media (max-width: 992px) {
             .header-title {
                 font-size: 1.2rem;
+            }
+            .westin-header-logo {
+                height: 30px;
             }
             .card {
                 height: 90px;
@@ -1680,7 +1689,17 @@ def main():
                 font-size: 1.1rem;
             }
             .champion-container {
-                height: 90px;
+                height: auto;
+                min-height: 90px;
+            }
+            /* Stack columns on mobile */
+            .mobile-stack {
+                display: flex;
+                flex-direction: column;
+            }
+            .mobile-stack > div {
+                width: 100% !important;
+                margin-bottom: 0.5rem;
             }
         }
         
@@ -1725,6 +1744,36 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
+    # Add responsive JavaScript for detecting mobile devices
+    st.markdown("""
+    <script>
+        // Add mobile class to body if screen width is less than 768px
+        function checkMobile() {
+            if (window.innerWidth < 768) {
+                document.body.classList.add('mobile');
+                
+                // Find all elements with the class 'row' and add the 'mobile-stack' class
+                const rows = document.querySelectorAll('.row');
+                rows.forEach(row => {
+                    row.classList.add('mobile-stack');
+                });
+            } else {
+                document.body.classList.remove('mobile');
+                
+                // Remove 'mobile-stack' class from rows
+                const rows = document.querySelectorAll('.row');
+                rows.forEach(row => {
+                    row.classList.remove('mobile-stack');
+                });
+            }
+        }
+        
+        // Run on load and on resize
+        window.addEventListener('load', checkMobile);
+        window.addEventListener('resize', checkMobile);
+    </script>
+    """, unsafe_allow_html=True)
+    
     # Load data
     data = load_data()
     
@@ -1735,21 +1784,23 @@ def main():
     # Define time periods
     today = datetime.today()
     
-    # For Earth Day challenge
-    challenge_start = datetime(2025, 4, 14)
-    challenge_end = datetime(2025, 4, 22)
+    # For Earth Day challenge - UPDATED DATES
+    challenge_start = datetime(2025, 4, 15)  # Changed from 14 to 15
+    challenge_end = datetime(2025, 4, 22)  # Same end date
     
-    # For current view (last 30 days by default)
+    # For current view (default to Year to Date)
     current_end = today
-    current_start = today - timedelta(days=30)
+    current_start = datetime(today.year, 1, 1)  # Year to date by default
     
     # Header with period selector
     header_col1, header_col2 = st.columns([4, 1])
     
     with header_col1:
+        # Replace text title with Westin logo
         st.markdown(f"""
         <div class="header-title">
-            <span>🌍 THE WESTIN LONDON CITY CELEBRATES EARTH DAY 2025</span>
+            <img src="logos/westin_logo.png" alt="The Westin London City" class="westin-header-logo">
+            <span>CELEBRATES EARTH DAY 2025</span>
         </div>
         """, unsafe_allow_html=True)
     
@@ -1758,12 +1809,12 @@ def main():
         period = st.selectbox(
             "",
             options=[
+                "Year to Date",  # Changed order to make this first
                 "Last 7 Days", 
                 "Last 30 Days", 
-                "Year to Date", 
                 "Earth Day Challenge"
             ],
-            index=0,  # Default to Last 7 Days
+            index=0,  # Default to Year to Date (index 0 now)
             label_visibility="collapsed"
         )
         
@@ -1797,59 +1848,150 @@ def main():
     except Exception as e:
         energy_chart = None
     
-    # Row 1: KPIs and Champion - all in one line
-    row1_cols = st.columns([1, 1, 1, 3])
+    # Check if on mobile for layout
+    is_mobile = st.session_state.get('is_mobile', False)
     
-    # KPIs
-    with row1_cols[0]:
-        # Changed to CO2 SAVED instead of VS LAST YEAR
-        st.markdown(f"""
-        <div class="card">
-            <p class="metric-label">🌍 CO₂ SAVED</p>
-            <p class="metric-value">{kpis['co2_saved']:,.0f} kg</p>
-            <p class="metric-delta">CARBON REDUCTION</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with row1_cols[1]:
-        # Energy saved
-        st.markdown(f"""
-        <div class="card">
-            <p class="metric-label">💡 ENERGY SAVED</p>
-            <p class="metric-value">{kpis['kwh_saved']:,.0f} kWh</p>
-            <p class="metric-delta">VS LAST YEAR</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with row1_cols[2]:
-        # Daily Average
-        daily_change = ((kpis['current_daily_avg'] - kpis['compare_daily_avg']) / kpis['compare_daily_avg']) * 100
-        change_color = "negative" if daily_change > 0 else ""
-        st.markdown(f"""
-        <div class="card">
-            <p class="metric-label">📅 DAILY AVERAGE</p>
-            <p class="metric-value">{kpis['current_daily_avg']:,.0f} kWh</p>
-            <p class="metric-delta {change_color}">{abs(daily_change):.1f}% vs last year</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with row1_cols[3]:
-        # Green Champion with Westin styling
-        st.markdown("""
-        <div class="champion-container">
-            <img src="https://ui-avatars.com/api/?name=J&G&background=006c93&color=fff&size=50" class="champion-photo">
-            <div class="champion-info">
-                <h3>Jekaterina and Gayatri - Green Champions</h3>
-                <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalized energy-saving tips."</p>
+    # Row 1: KPIs and Champion - responsive layout
+    if is_mobile:
+        # Mobile layout - stack cards
+        row1_cols = st.columns([1])
+        
+        with row1_cols[0]:
+            # CO2 Saved
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">🌍 CO₂ SAVED</p>
+                <p class="metric-value">{kpis['co2_saved']:,.0f} kg</p>
+                <p class="metric-delta">CARBON REDUCTION</p>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+            
+            # Energy saved
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">💡 ENERGY SAVED</p>
+                <p class="metric-value">{kpis['kwh_saved']:,.0f} kWh</p>
+                <p class="metric-delta">VS LAST YEAR</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Guest Usage with lightbulb equivalence
+            # Calculate lightbulb equivalence (assuming standard UK 10W LED bulb running for 10 hours)
+            # 10W bulb for 10 hours = 0.1 kWh, so divide guest usage by 0.1 to get number of bulbs
+            lightbulb_equivalent = int(kpis['guest_usage'] / 0.1)
+            
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">👤 GUEST USAGE</p>
+                <p class="metric-value">{kpis['guest_usage']:,.2f} kWh</p>
+                <p class="metric-delta">= {lightbulb_equivalent} LED BULBS FOR 10 HOURS</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Progress to Goal - simplified with clearer progress indicators
+            current_percentage = abs(kpis['percent_change'])
+            target_percentage = kpis['target_savings_percent']
+            progress_towards_target = min(100, (current_percentage / target_percentage) * 100)
+            
+            # Percentage remaining to target
+            percentage_remaining = max(0, target_percentage - current_percentage)
+            
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">🎯 PROGRESS TO {target_percentage}% SAVINGS GOAL</p>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: {progress_towards_target}%;"></div>
+                </div>
+                <p class="metric-value">{current_percentage:.1f}% SAVED</p>
+                <p class="metric-delta">{percentage_remaining:.1f}% MORE NEEDED</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Green Champion with Westin styling
+            st.markdown("""
+            <div class="champion-container">
+                <img src="https://ui-avatars.com/api/?name=JG&background=006c93&color=fff&size=50" class="champion-photo">
+                <div class="champion-info">
+                    <h3>Jekaterina and Gayatri - Green Champions</h3>
+                    <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalized energy-saving tips."</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        # Desktop layout - cards in a row
+        row1_cols = st.columns([1, 1, 1, 1, 3])
+        
+        # KPIs
+        with row1_cols[0]:
+            # CO2 SAVED
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">🌍 CO₂ SAVED</p>
+                <p class="metric-value">{kpis['co2_saved']:,.0f} kg</p>
+                <p class="metric-delta">CARBON REDUCTION</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with row1_cols[1]:
+            # Energy saved
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">💡 ENERGY SAVED</p>
+                <p class="metric-value">{kpis['kwh_saved']:,.0f} kWh</p>
+                <p class="metric-delta">VS LAST YEAR</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with row1_cols[2]:
+            # Guest Usage (NEW) instead of Daily Average with lightbulb equivalence
+            # Calculate lightbulb equivalence (assuming standard UK 10W LED bulb running for 10 hours)
+            # 10W bulb for 10 hours = 0.1 kWh, so divide guest usage by 0.1 to get number of bulbs
+            lightbulb_equivalent = int(kpis['guest_usage'] / 0.1)
+            
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">👤 GUEST USAGE</p>
+                <p class="metric-value">{kpis['guest_usage']:,.2f} kWh</p>
+                <p class="metric-delta">= {lightbulb_equivalent} LED BULBS FOR 10 HOURS</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with row1_cols[3]:
+            # Progress to Goal - simplified with clearer progress indicators
+            current_percentage = abs(kpis['percent_change'])
+            target_percentage = kpis['target_savings_percent']
+            progress_towards_target = min(100, (current_percentage / target_percentage) * 100)
+            
+            # Percentage remaining to target
+            percentage_remaining = max(0, target_percentage - current_percentage)
+            
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">🎯 PROGRESS TO {target_percentage}% SAVINGS GOAL</p>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: {progress_towards_target}%;"></div>
+                </div>
+                <p class="metric-value">{current_percentage:.1f}% SAVED</p>
+                <p class="metric-delta">{percentage_remaining:.1f}% MORE NEEDED</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with row1_cols[4]:
+            # Green Champion with Westin styling
+            st.markdown("""
+            <div class="champion-container">
+                <img src="https://ui-avatars.com/api/?name=JG&background=006c93&color=fff&size=50" class="champion-photo">
+                <div class="champion-info">
+                    <h3>Jekaterina and Gayatri - Green Champions</h3>
+                    <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalized energy-saving tips."</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
     
-    # Row 2: Main content - chart and tips side by side
-    row2_cols = st.columns([1, 1])
-    
-    # Peak Energy Chart 
-    with row2_cols[0]:
+    # Row 2: Main content - chart and tips - responsive layout
+    if is_mobile:
+        # Mobile layout - stack columns
+        # Peak Energy Chart 
         st.markdown('<div class="chart-container">', unsafe_allow_html=True)
         st.markdown('<h3 class="chart-title">Peak Energy Periods</h3>', unsafe_allow_html=True)
         
@@ -1872,52 +2014,105 @@ def main():
             st.info("Energy data unavailable")
         
         st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Slido with Westin-styled title
-    with row2_cols[1]:
+        
+        # Slido with Westin-styled title
         st.markdown('<div class="feedback-container">', unsafe_allow_html=True)
         st.markdown('<h3 class="feedback-title">Heavenly Ideas for Earth Day</h3>', unsafe_allow_html=True)
         
-        # Embed Sli.do with adjusted height
+        # Embed Sli.do with adjusted height and clickable link
+        st.markdown("""
+        <a href="https://app.sli.do/event/raPH3EvtzJPnVW84kh7svV" target="_blank" style="font-size: 0.75rem; color: #006c93; margin-bottom: 5px; display: block;">
+            📱 Click here to open Slido on your device
+        </a>
+        """, unsafe_allow_html=True)
+        
         components.html(
             """
             <iframe src="https://wall.sli.do/event/raPH3EvtzJPnVW84kh7svV/?section=a91516a6-832e-408d-9afa-ec3f5034e0b2" 
                     frameborder="0" 
-                    style="width: 100%; height: 250px;" 
+                    style="width: 100%; height: 230px;" 
                     allow="camera; microphone; fullscreen; display-capture; autoplay">
             </iframe>
             """,
             height=250,
         )
         st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        # Desktop layout - side by side
+        row2_cols = st.columns([1, 1])
+        
+        # Peak Energy Chart 
+        with row2_cols[0]:
+            st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+            st.markdown('<h3 class="chart-title">Peak Energy Periods</h3>', unsafe_allow_html=True)
+            
+            if energy_chart:
+                st.plotly_chart(energy_chart['figure'], use_container_width=True, config={'displayModeBar': False})
+                
+                if energy_chart['type'] == 'hourly':
+                    st.markdown(f"""
+                    <p class="chart-subtitle">
+                        <strong>Peak times:</strong> {', '.join(energy_chart['peak_times'][:3])}
+                    </p>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <p class="chart-subtitle">
+                        <strong>Highest usage:</strong> {', '.join(energy_chart['peak_days'])}
+                    </p>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("Energy data unavailable")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Slido with Westin-styled title
+        with row2_cols[1]:
+            st.markdown('<div class="feedback-container">', unsafe_allow_html=True)
+            st.markdown('<h3 class="feedback-title">Heavenly Ideas for Earth Day</h3>', unsafe_allow_html=True)
+            
+            # Embed Sli.do with adjusted height and clickable link
+            st.markdown("""
+            <a href="https://app.sli.do/event/raPH3EvtzJPnVW84kh7svV" target="_blank" style="font-size: 0.75rem; color: #006c93; margin-bottom: 5px; display: block;">
+                📱 Click here to open Slido on your device
+            </a>
+            """, unsafe_allow_html=True)
+            
+            components.html(
+                """
+                <iframe src="https://wall.sli.do/event/raPH3EvtzJPnVW84kh7svV/?section=a91516a6-832e-408d-9afa-ec3f5034e0b2" 
+                        frameborder="0" 
+                        style="width: 100%; height: 230px;" 
+                        allow="camera; microphone; fullscreen; display-capture; autoplay">
+                </iframe>
+                """,
+                height=250,
+            )
+            st.markdown('</div>', unsafe_allow_html=True)
     
-    # Row 3: Tips section in full width
-    row3_cols = st.columns([1])
-    
-    with row3_cols[0]:
-        # Energy-saving tips with Westin wellness terminology and fixed height/overflow
-        st.markdown("""
-        <div class="tips-section" style="height: 110px; overflow: hidden;">
-            <h3>Wellness & Sustainability Tips</h3>
-            <div class="tips-container" style="max-height: 75px; overflow: hidden;">
-                <div class="tip-chip">💡 Natural lighting</div>
-                <div class="tip-chip">🚿 Shorter Heavenly Shower</div>
-                <div class="tip-chip">🌡️ Thermostat at 22°C</div>
-                <div class="tip-chip">☀️ Embrace daylight</div>
-                <div class="tip-chip">🔌 Unplug devices</div>
-                <div class="tip-chip">🚶‍♂️ Take the stairs</div>
-                <div class="tip-chip">🧺 Reuse Heavenly linens</div>
-                <div class="tip-chip">💧 Report leaks</div>
-                <div class="tip-chip">📱 Go digital</div>
-                <div class="tip-chip">🚪 Close doors</div>
-                <div class="tip-chip">🔆 Task lighting</div>
-                <div class="tip-chip">🌱 Join our green team</div>
-                <div class="tip-chip">♻️ Recycle</div>
-                <div class="tip-chip">🔧 Report issues</div>
-                <div class="tip-chip">💻 Power down</div>
-            </div>
+    # Row 3: Tips section in full width - ensure it's scrollable on small screens
+    st.markdown("""
+    <div class="tips-section" style="height: auto; min-height: 110px; max-height: 200px; overflow-y: auto;">
+        <h3>Wellness & Sustainability Tips</h3>
+        <div class="tips-container" style="max-height: unset; overflow: visible;">
+            <div class="tip-chip">💡 Natural lighting</div>
+            <div class="tip-chip">🚿 Shorter Heavenly Shower</div>
+            <div class="tip-chip">🌡️ Thermostat at 22°C</div>
+            <div class="tip-chip">☀️ Embrace daylight</div>
+            <div class="tip-chip">🔌 Unplug devices</div>
+            <div class="tip-chip">🚶‍♂️ Take the stairs</div>
+            <div class="tip-chip">🧺 Reuse Heavenly linens</div>
+            <div class="tip-chip">💧 Report leaks</div>
+            <div class="tip-chip">📱 Go digital</div>
+            <div class="tip-chip">🚪 Close doors</div>
+            <div class="tip-chip">🔆 Task lighting</div>
+            <div class="tip-chip">🌱 Join our green team</div>
+            <div class="tip-chip">♻️ Recycle</div>
+            <div class="tip-chip">🔧 Report issues</div>
+            <div class="tip-chip">💻 Power down</div>
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+    """, unsafe_allow_html=True)
     
     # Westin's wellness message
     st.markdown("""
@@ -1932,6 +2127,23 @@ def main():
         The Westin London City | Earth Day Challenge | {current_start.strftime('%b %d')} - {current_end.strftime('%b %d, %Y')} | vs {compare_start.strftime('%b %d')} - {compare_end.strftime('%b %d, %Y')} | Based on {kpis['matched_day_count']} matched days out of {kpis['expected_day_count']} expected
     </div>
     """, unsafe_allow_html=True)
+    
+    # Add JavaScript to check for mobile and set session state
+    st.markdown("""
+    <script>
+        // Set mobile detection in sessionStorage
+        if (window.innerWidth < 768) {
+            sessionStorage.setItem('is_mobile', 'true');
+        } else {
+            sessionStorage.setItem('is_mobile', 'false');
+        }
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # Set session state based on screen width at start
+    if 'is_mobile' not in st.session_state:
+        # Default to desktop view initially
+        st.session_state['is_mobile'] = False
 
 if __name__ == "__main__":
     main()
