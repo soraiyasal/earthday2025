@@ -214,6 +214,8 @@ def get_matching_day_pairs(data, current_start, current_end, compare_start, comp
     }
 
 # Get KPIs using matched day pairs
+# In your get_matched_kpis function (around line 427), add debug logging:
+
 def get_matched_kpis(data, current_start, current_end, compare_start, compare_end):
     # Get matched day pairs
     matched_data = get_matching_day_pairs(data, current_start, current_end, compare_start, compare_end)
@@ -225,11 +227,17 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     current_total = current_data['Total Usage'].sum()
     compare_total = compare_data['Total Usage'].sum()
     
+    # Add this debug print statement
+    print(f"DEBUG: current_total={current_total}, compare_total={compare_total}")
+    
     # Handle edge case where compare_total is 0
     if compare_total == 0:
         percent_change = 0
     else:
         percent_change = ((current_total - compare_total) / compare_total) * 100
+    
+    # Add this debug print statement
+    print(f"DEBUG: percent_change={percent_change}")
     
     # Calculate daily averages
     current_daily_avg = current_data['Total Usage'].mean()
@@ -238,8 +246,15 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     # Calculate CO2 impact
     co2_saved = (compare_total - current_total) * ELECTRICITY_FACTOR
     
+    # This is likely the issue! Fix the calculations:
+    kwh_saved = compare_total - current_total
+    
+    # Add these debug print statements
+    print(f"DEBUG: co2_saved (raw)={co2_saved}")
+    print(f"DEBUG: kwh_saved (raw)={kwh_saved}")
+    
     # Calculate per-guest usage (with average of 235 guests per night)
-    avg_guests = 235
+    avg_guests = 202
     guest_usage = current_total / (len(current_data) * avg_guests)
     
     # Add context to CO2 saved - trees equivalent
@@ -251,6 +266,25 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     target_savings_percent = 10
     target_usage = compare_total * (1 - target_savings_percent/100)
     progress_percentage = min(100, max(0, ((compare_total - current_total) / (compare_total - target_usage)) * 100))
+    
+    # Debug the progress calculation
+    print(f"DEBUG: target_usage={target_usage}")
+    print(f"DEBUG: progress_percentage={progress_percentage}")
+    
+    # Make sure kwh_saved and co2_saved are properly calculated
+    # If current_total is higher than compare_total, then there are no savings
+    if current_total >= compare_total:
+        kwh_saved = 0
+        co2_saved = 0
+        # Also make sure progress is 0 when there are no savings
+        progress_percentage = 0
+    else:
+        kwh_saved = compare_total - current_total
+        co2_saved = kwh_saved * ELECTRICITY_FACTOR
+    
+    # Debug final values
+    print(f"DEBUG: final kwh_saved={kwh_saved}, co2_saved={co2_saved}, progress_percentage={progress_percentage}")
+    
     remaining_kwh = max(0, current_total - target_usage)
     
     # Include match quality metrics
@@ -260,8 +294,8 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         'percent_change': percent_change,
         'current_daily_avg': current_daily_avg,
         'compare_daily_avg': compare_daily_avg,
-        'co2_saved': max(0, co2_saved),
-        'kwh_saved': max(0, compare_total - current_total),
+        'co2_saved': co2_saved,  # No max(0, ...) as we handle it above
+        'kwh_saved': kwh_saved,  # No max(0, ...) as we handle it above 
         'matched_day_count': matched_data['matched_day_count'],
         'expected_day_count': matched_data['expected_day_count'],
         'match_percentage': matched_data['match_percentage'],
@@ -271,7 +305,6 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         'target_savings_percent': target_savings_percent,
         'trees_equivalent': trees_equivalent
     }
-
 # Get compare dates from previous year
 def get_comparative_period(current_start, current_end):
     # Get same period from last year
@@ -989,29 +1022,44 @@ def main():
     
     # Header with period selector
     header_col1, header_col2 = st.columns([4, 1])
-    
+
     with header_col1:
+        # Use base64 encoding to embed the image directly in the HTML
+        # This avoids Streamlit's image component and its expandable behavior
+        import base64
+        from pathlib import Path
+        
+        # Load and encode the image
+        img_path = "logos/westin_logo.png"
+        with open(img_path, "rb") as f:
+            img_data = base64.b64encode(f.read()).decode()
+        
+        # Create HTML with precise positioning
         st.markdown(f"""
-        <div class="header-title">
-            <img src="logos/westin_logo.png" alt="The Westin London City" class="westin-header-logo">
-            <span>CELEBRATES EARTH DAY 2025</span>
+        <div style="display: flex; align-items: center; gap: 0;">
+            <img src="data:image/png;base64,{img_data}" 
+                style="height: 55px; display: inline-block; margin: 10px; padding: 0;"
+                alt="Westin">
+            <span style="color: #002d72; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
+                        display: inline-block; margin: 0; padding-left: 0;">
+                CELEBRATES EARTH DAY 2025
+            </span>
         </div>
         """, unsafe_allow_html=True)
-    
+
     with header_col2:
-        # Time period selector using Streamlit's native selectbox
+        # Period selector
         period = st.selectbox(
             "",
             options=[
-                "Year to Date",  # Changed order to make this first
+                "Year to Date",
                 "Last 7 Days", 
                 "Last 30 Days", 
                 "Earth Day Challenge"
             ],
-            index=0,  # Default to Year to Date (index 0 now)
+            index=0,
             label_visibility="collapsed"
         )
-        
     # Set date ranges based on selection
     if period == "Last 7 Days":
         current_end = today
@@ -1082,13 +1130,14 @@ def main():
             """, unsafe_allow_html=True)
             
             # Progress to Goal - simplified with clearer progress indicators
-            current_percentage = abs(kpis['percent_change'])
+            current_percentage = abs(kpis['percent_change']) if kpis['percent_change'] < 0 else 0.0
             target_percentage = kpis['target_savings_percent']
             progress_towards_target = min(100, (current_percentage / target_percentage) * 100)
             
             # Percentage remaining to target
             percentage_remaining = max(0, target_percentage - current_percentage)
             
+
             st.markdown(f"""
             <div class="card">
                 <p class="metric-label">🎯 {target_percentage}% SAVINGS GOAL</p>
@@ -1151,9 +1200,11 @@ def main():
             
         with row1_cols[3]:
             # Progress to Goal - simplified with clearer progress indicators
-            current_percentage = abs(kpis['percent_change'])
+            # Change this in the desktop layout section (around line 760)
+            current_percentage = abs(kpis['percent_change']) if kpis['percent_change'] < 0 else 0.0
             target_percentage = kpis['target_savings_percent']
-            progress_towards_target = min(100, (current_percentage / target_percentage) * 100)
+            progress_towards_target = kpis['progress_percentage']  # Use the correct value from KPIs
+
             
             # Percentage remaining to target
             percentage_remaining = max(0, target_percentage - current_percentage)
@@ -1294,7 +1345,6 @@ def main():
             <div class="tip-chip">🚶‍♂️ Take the stairs</div>
             <div class="tip-chip">🧺 Reuse Heavenly linens</div>
             <div class="tip-chip">💧 Report leaks</div>
-            <div class="tip-chip">📱 Go digital</div>
             <div class="tip-chip">🚪 Close doors</div>
             <div class="tip-chip">🔆 Task lighting</div>
             <div class="tip-chip">🌱 Join our green team</div>

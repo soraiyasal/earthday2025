@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -7,17 +6,27 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import sqlite3
 import random
-import streamlit.components.v1 as components  # Import components for HTML embedding
+import streamlit.components.v1 as components
+import os
 
-# Set page config immediately - this must be the first Streamlit command
+# Set page config - must be first Streamlit command
 st.set_page_config(
-    page_title="Earth Day 2025 Dashboard", 
+    page_title="EasyHotel Victoria Earth Day 2025", 
     page_icon="🌍", 
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"  # Start with sidebar collapsed
 )
 
+# Hide sidebar completely with CSS
+st.markdown("""
+<style>
+    [data-testid="collapsedControl"] {display: none;}
+    section[data-testid="stSidebar"] {display: none !important;}
+</style>
+""", unsafe_allow_html=True)
+
 # Set the specific hotel for this dashboard
-HOTEL_NAME = "EH"  # Change this for each hotel's dashboard
+HOTEL_NAME = "EH
 
 # MPAN to Hotel mapping
 mpan_to_hotel = {
@@ -39,6 +48,449 @@ HOTEL_MPAN = get_hotel_mpan(HOTEL_NAME)
 
 # Electricity factors
 ELECTRICITY_FACTOR = 0.20493  # 2024/2025 factor
+
+# Load custom CSS with Canopy by Hilton London City branding and responsive design
+st.markdown("""
+<style>
+    /* Main header styling */
+    .header-container {
+        background-color: #fe5000;  /* Canopy primary orange */
+        padding: 0.5rem;
+        border-radius: 0.4rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    /* Canopy logo style in header */
+    .header-logo {
+        height: 40px;
+        margin-right: 10px;
+        vertical-align: middle;
+    }
+    
+    /* Header title with logo styling */
+    .header-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin: 0;
+        color: white;
+        flex-grow: 1;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        letter-spacing: 0.5px;
+        background-color: #fe5000;
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;  /* Canopy uses modern sans-serif font */
+        display: flex;
+        align-items: center;
+    }
+    .period-selector {
+        width: 180px;
+        margin-right: 0.5rem;
+    }
+    
+    /* Ultra-compact body styling */
+    .block-container {
+        padding-top: 0.2rem !important;
+        padding-bottom: 0.2rem !important;
+        max-width: 100% !important;
+    }
+    div.stApp > header {
+        display: none;
+    }
+    .main > div {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Fixed height card styling */
+    .card {
+        background-color: white;
+        border-radius: 0.4rem;
+        padding: 0.6rem 0.8rem; /* Increase horizontal padding */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+
+        height: 110px !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        margin-bottom: 0.6rem;
+        overflow: hidden;
+    }
+    
+    /* Fix truncation issues with labels */
+    .metric-label {
+        font-size: 0.9rem; /* Slightly larger */
+        color: #fe5000;
+        margin-bottom: 0.3rem;
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+        white-space: normal !important; /* Allow wrapping */
+        overflow: visible !important; /* Show overflow */
+        text-overflow: clip !important; /* Don't use ellipsis */
+        display: block !important; /* Remove webkit line clamp */
+        -webkit-line-clamp: unset !important;
+        -webkit-box-orient: unset !important;
+        line-height: 1.2;
+        max-height: none !important;
+    }
+    
+    /* Fix truncation issues with values */
+    .metric-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #3b3b3b;
+        margin: 0.2rem 0;
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+        white-space: normal !important; /* Allow wrapping */
+        overflow: visible !important; /* Show overflow */
+        text-overflow: clip !important; /* Don't use ellipsis */
+        line-height: 1.2;
+        max-height: none !important;
+    }
+    
+    /* Fix truncation issues with delta indicators */
+    .metric-delta {
+        font-size: 0.8rem;
+        color: #d14400;
+        font-weight: 600;
+        padding: 0.2rem 0.4rem;
+        background-color: #fde5d9;
+        border-radius: 0.25rem;
+        display: block !important; /* Make it block to take full width */
+        overflow: visible !important; /* Show overflow */
+        text-overflow: clip !important; /* Don't use ellipsis */
+        white-space: normal !important; /* Allow wrapping */
+        max-width: 100%;
+        line-height: 1.2;
+        max-height: none !important;
+    }
+    .metric-delta.negative {
+        color: #c25450;  /* Canopy accent red for negative change */
+        background-color: #fdf2f0;
+    }
+    
+    /* Progress bar styling */
+    .progress-container {
+        width: 100%;
+        height: 10px;
+        background-color: #fde5d9;
+        border-radius: 5px;
+        margin-top: 0.2rem;
+    }
+    .progress-bar {
+        height: 100%;
+        border-radius: 5px;
+        background-color: #fe5000;
+    }
+    
+    /* Make champion container match metric card height */
+    .champion-container {
+        background-color: #fde5d9;  /* Light Canopy orange */
+        border-radius: 0.4rem;
+        padding: 0.6rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        height: 110px !important; /* Match card height */
+        # border: 1px solid ;  /* Medium Canopy orange */
+        margin-bottom: 0.6rem;
+        overflow: hidden;
+    }
+    
+    .champion-photo {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        # border: 2px solid ;  /* Canopy orange */
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    
+    .champion-info {
+        flex: 1;
+        overflow: hidden;
+    }
+    
+    .champion-info h3 {
+        font-size: 0.85rem;
+        margin-top: 0;
+        margin-bottom: 0.2rem;
+        color: #fe5000;  /* Canopy orange */
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .champion-info p {
+        font-size: 0.75rem;
+        margin: 0;
+        line-height: 1.2;
+        color: #3b3b3b;  /* Canopy dark gray */
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3; /* Limit to 3 lines */
+        -webkit-box-orient: vertical;
+        max-height: 2.7em; /* Approximately 3 lines */
+    }
+    
+    /* Chart title styling */
+    .chart-title {
+        font-size: 0.85rem;
+        margin-top: 0;
+        margin-bottom: 0.3rem;
+        color: #fe5000;  /* Canopy orange */
+        font-weight: 600;
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+    }
+    .chart-subtitle {
+        font-size: 0.7rem;
+        margin: 0;
+        color: #3b3b3b;  /* Canopy dark gray */
+        text-align: center;
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+    }
+    
+    /* Chart container with margin */
+    .chart-container {
+        margin-bottom: 0.8rem;
+    }
+    
+    /* Tips styling with better visibility */
+    .tips-section {
+        height: auto;
+        min-height: 110px;
+        background-color: #fff6f1;  /* Very light Canopy orange */
+        padding: 0.6rem;
+        border-radius: 0.4rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        # border: 1px solid #fe5000;  /* Medium Canopy orange */
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0.8rem;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    .tips-section h3 {
+        font-size: 0.85rem;
+        margin-top: 0;
+        margin-bottom: 0.3rem;
+        color: #fe5000;  /* Canopy orange */
+        font-weight: 600;
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+    }
+    .tips-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.2rem;
+        overflow: visible;
+    }
+    .tip-chip {
+        background-color: white;
+        padding: 0.2rem 0.4rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        border: 1px solid #fde5d9;  /* Light Canopy orange */
+        color: #fe5000;  /* Canopy orange for text visibility */
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        font-weight: 600; /* Make more visible */
+    }
+    
+    /* Feedback container with margin */
+    .feedback-container {
+        margin-bottom: 0.8rem;
+    }
+    
+    /* Feedback title styling */
+    .feedback-title {
+        font-size: 0.85rem;
+        margin-top: 0;
+        margin-bottom: 0.3rem;
+        color: #fe5000;  /* Canopy orange */
+        font-weight: 600;
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+    }
+    
+    /* Footer */
+    .footer {
+        text-align: center;
+        color: #fe5000;  /* Changed to Canopy orange for better visibility */
+        font-size: 0.65rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+    }
+    
+    /* Fix for plot background */
+    .js-plotly-plot .plotly .main-svg {
+        background-color: transparent !important;
+    }
+    
+    /* Remove padding from columns */
+    div.css-1r6slb0.e1tzin5v2 {
+        padding: 0.1rem !important;
+    }
+    
+    /* Hide streamlit elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+        .header-title {
+            font-size: 1.2rem;
+        }
+        .header-logo {
+            height: 30px;
+        }
+        
+        /* Adjusted card height for mobile */
+        .champion-container {
+            height: 100px !important; /* Match card height on mobile */
+        }
+
+        .card {
+        background-color: #f7f7f7;
+        }
+        
+        .metric-label {
+            color: #ff7a3a;
+        }
+        
+        .metric-value {
+            color: #ffffff;
+        }
+        
+        .metric-delta {
+            background-color: rgba(253, 229, 217, 0.1);
+            color: #ffb298;
+        }
+            
+        .champion-info p {
+            -webkit-line-clamp: 2; /* Limit to 2 lines on mobile */
+            max-height: 1.8em;
+        }
+        
+        /* Stack columns on mobile */
+        .mobile-stack {
+            display: flex;
+            flex-direction: column;
+        }
+        .mobile-stack > div {
+            width: 100% !important;
+            margin-bottom: 0.8rem;
+        }
+        
+        /* Adjust padding for mobile */
+        .main > div {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        
+        /* Ensure tips are fully visible on mobile */
+        .tips-section {
+            max-height: 250px; /* Taller on mobile for better visibility */
+        }
+        
+        .tip-chip {
+            font-weight: 700; /* Bolder on mobile for better visibility */
+        }
+        
+        /* Better mobile chart spacing */
+        .chart-container {
+            margin-bottom: 1rem;
+        }
+        
+        /* Better mobile Slido container spacing */
+        .feedback-container {
+            margin-bottom: 1rem;
+        }
+    }
+    
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+        .card {
+            background-color: #f7f7f7;
+        }
+        
+        .metric-value {
+            color: #212121;
+        }
+        
+        .champion-container {
+            background-color: #f7f7f7;
+        }
+        
+        .champion-info p {
+            color: #212121;
+        }
+        
+        .tips-section {
+            background-color: #f7f7f7;
+        }
+        
+        .tip-chip {
+            background-color: #ff7a3a;
+            color: #212121; /* Lighter orange for dark mode */
+
+        }
+        
+        .chart-subtitle {
+            color: #212121;
+        }
+    }
+    
+    /* Hide dropdown arrow for period selector */
+    .period-selector button {
+        display: none !important;
+    }
+    
+    /* Fix for Streamlit components */
+    .stSelectbox > div > div {
+        background-color: white;
+    }
+    
+    /* Canopy logo style */
+    .canopy-logo {
+        height: 24px;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+    
+    /* Orange element for Canopy */
+    .canopy-element {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 30px;
+        height: 30px;
+        display: flex;
+    }
+    .canopy-element .orange-square {
+        width: 30px;
+        height: 30px;
+        background-color: #fe5000;  /* Canopy orange */
+    }
+    
+    /* Locally Inspired message styling */
+    .locally-inspired-message {
+        font-style: italic;
+        color: #fe5000;
+        font-size: 0.7rem;
+        text-align: center;
+        margin-top: 0.4rem;
+        margin-bottom: 0.4rem;
+        font-family: 'Ebaqdesign', 'Helvetica', sans-serif;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Load data from SQLite database
 @st.cache_data(show_spinner=False)
@@ -77,21 +529,13 @@ def load_data():
             ORDER BY Date
             """
         
-        # Load the data with explicit date handling
         data = pd.read_sql_query(query, conn)
-        
-        # Convert Date column to datetime explicitly
         data['Date'] = pd.to_datetime(data['Date'])
         
         # If we didn't filter by MPAN, filter the data after loading
         if not HOTEL_MPAN and 'Meter Point' in data.columns:
-            # Convert Meter Point to string for proper comparison
             data["Meter Point"] = data["Meter Point"].astype(str)
-            
-            # Create a hotel column
             data["Hotel"] = data["Meter Point"].map(mpan_to_hotel)
-            
-            # Filter for this hotel
             data = data[data["Hotel"] == HOTEL_NAME]
         
         # Ensure numeric values for time columns and Total Usage
@@ -164,6 +608,9 @@ def get_matching_day_pairs(data, current_start, current_end, compare_start, comp
     """
     Extracts only day pairs that exist in both current and comparison periods,
     matching by day-of-week and week-of-month to ensure valid comparisons.
+    
+    Note: This function only compares days that exist in both periods with the
+    same day-of-week, week-of-month, and month position to ensure a fair comparison.
     """
     # Filter basic date ranges
     current_data = data[(data['Date'] >= current_start) & (data['Date'] <= current_end)].copy()
@@ -208,7 +655,6 @@ def get_matching_day_pairs(data, current_start, current_end, compare_start, comp
         'match_percentage': match_percentage
     }
 
-# Get KPIs using matched day pairs
 def get_matched_kpis(data, current_start, current_end, compare_start, compare_end):
     # Get matched day pairs
     matched_data = get_matching_day_pairs(data, current_start, current_end, compare_start, compare_end)
@@ -220,11 +666,17 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     current_total = current_data['Total Usage'].sum()
     compare_total = compare_data['Total Usage'].sum()
     
+    # Add this debug print statement
+    print(f"DEBUG: current_total={current_total}, compare_total={compare_total}")
+    
     # Handle edge case where compare_total is 0
     if compare_total == 0:
         percent_change = 0
     else:
         percent_change = ((current_total - compare_total) / compare_total) * 100
+    
+    # Add this debug print statement
+    print(f"DEBUG: percent_change={percent_change}")
     
     # Calculate daily averages
     current_daily_avg = current_data['Total Usage'].mean()
@@ -233,6 +685,47 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     # Calculate CO2 impact
     co2_saved = (compare_total - current_total) * ELECTRICITY_FACTOR
     
+    # This is likely the issue! Fix the calculations:
+    kwh_saved = compare_total - current_total
+    
+    # Add these debug print statements
+    print(f"DEBUG: co2_saved (raw)={co2_saved}")
+    print(f"DEBUG: kwh_saved (raw)={kwh_saved}")
+    
+    # Calculate per-guest usage (with average of 235 guests per night)
+    avg_guests = 136
+    guest_usage = current_total / (len(current_data) * avg_guests)
+    
+    # Add context to CO2 saved - trees equivalent
+    # Average tree absorbs about 22 kg of CO2 per year
+    # Source: UK Forestry Commission approximate figures
+    trees_equivalent = int(co2_saved / 22)
+    
+    # Calculate progress toward 10% savings goal
+    target_savings_percent = 10
+    target_usage = compare_total * (1 - target_savings_percent/100)
+    progress_percentage = min(100, max(0, ((compare_total - current_total) / (compare_total - target_usage)) * 100))
+    
+    # Debug the progress calculation
+    print(f"DEBUG: target_usage={target_usage}")
+    print(f"DEBUG: progress_percentage={progress_percentage}")
+    
+    # Make sure kwh_saved and co2_saved are properly calculated
+    # If current_total is higher than compare_total, then there are no savings
+    if current_total >= compare_total:
+        kwh_saved = 0
+        co2_saved = 0
+        # Also make sure progress is 0 when there are no savings
+        progress_percentage = 0
+    else:
+        kwh_saved = compare_total - current_total
+        co2_saved = kwh_saved * ELECTRICITY_FACTOR
+    
+    # Debug final values
+    print(f"DEBUG: final kwh_saved={kwh_saved}, co2_saved={co2_saved}, progress_percentage={progress_percentage}")
+    
+    remaining_kwh = max(0, current_total - target_usage)
+    
     # Include match quality metrics
     return {
         'current_total': current_total,
@@ -240,29 +733,17 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         'percent_change': percent_change,
         'current_daily_avg': current_daily_avg,
         'compare_daily_avg': compare_daily_avg,
-        'co2_saved': max(0, co2_saved),
-        'kwh_saved': max(0, compare_total - current_total),
+        'co2_saved': co2_saved,  # No max(0, ...) as we handle it above
+        'kwh_saved': kwh_saved,  # No max(0, ...) as we handle it above 
         'matched_day_count': matched_data['matched_day_count'],
         'expected_day_count': matched_data['expected_day_count'],
         'match_percentage': matched_data['match_percentage'],
-        'matched_data': matched_data
+        'guest_usage': guest_usage,
+        'progress_percentage': progress_percentage,
+        'remaining_kwh': remaining_kwh,
+        'target_savings_percent': target_savings_percent,
+        'trees_equivalent': trees_equivalent
     }
-
-# Generate hourly usage data 
-def generate_hourly_data(data):
-    time_cols = [f"{str(hour).zfill(2)}:{minute}" 
-                for hour in range(24) 
-                for minute in ['00', '30']]
-    
-    # Calculate average usage for each half-hour slot
-    hourly_usage = data[time_cols].mean().reset_index()
-    hourly_usage.columns = ['time', 'usage']
-    
-    # Convert time to hour label
-    hourly_usage['hour'] = hourly_usage['time'].apply(lambda x: int(x.split(':')[0]))
-    hourly_usage['label'] = hourly_usage['hour'].apply(lambda x: f"{x}:00")
-    
-    return hourly_usage
 
 # Get compare dates from previous year
 def get_comparative_period(current_start, current_end):
@@ -273,246 +754,252 @@ def get_comparative_period(current_start, current_end):
     
     return last_year_start, last_year_end
 
+def get_hourly_chart(data, current_start, current_end):
+    # Use full data for hourly analysis
+    current_period_data = data[(data['Date'] >= current_start) & (data['Date'] <= current_end)]
+    
+    # Check if we have time columns in our data
+    time_cols = [f"{str(hour).zfill(2)}:{minute}" 
+                for hour in range(24) 
+                for minute in ['00', '30']]
+                
+    hourly_columns_exist = all(col in current_period_data.columns for col in time_cols[:4])
+    
+    if hourly_columns_exist:
+        # For half-hourly data, use the raw time columns directly
+        hh_data = []
+        
+        for col in time_cols:
+            hh_data.append({
+                'time_slot': col,
+                'usage': current_period_data[col].mean()
+            })
+        
+        hh_df = pd.DataFrame(hh_data)
+        
+        # Add hour information for sorting and grouping
+        hh_df['hour'] = hh_df['time_slot'].apply(lambda x: int(x.split(':')[0]))
+        hh_df['minute'] = hh_df['time_slot'].apply(lambda x: x.split(':')[1])
+        
+        # Find top 5 peak half-hour periods
+        top_periods = hh_df.nlargest(5, 'usage')
+        
+        # Create half-hourly chart with Canopy colors
+        hour_fig = px.bar(
+            hh_df,
+            x='time_slot',
+            y='usage',
+            color='usage',
+            color_continuous_scale=[[0, "#fde5d9"], [0.5, "#ff7a3a"], [1, "#fe5000"]],  # Canopy orange gradient
+            labels={'usage': 'Energy (kWh)', 'time_slot': 'Time of Day'}
+        )
+        
+        # Only show every 2-hour label to avoid crowding
+        show_labels = hh_df.loc[hh_df['minute'] == '00', 'time_slot'].iloc[::2].tolist()
+        
+        hour_fig.update_layout(
+            coloraxis_showscale=False,
+            height=240,  # Adjusted height
+            margin=dict(l=5, r=5, t=5, b=20),
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(
+                tickmode='array',
+                tickvals=show_labels,
+                ticktext=show_labels,
+                title=None,  # Remove axis title
+                gridcolor='#fde5d9',
+                tickfont=dict(size=9)
+            ),
+            yaxis=dict(
+                title=None,  # Remove axis title
+                gridcolor='#fde5d9',
+                tickfont=dict(size=9)
+            ),
+            hoverlabel=dict(
+                bgcolor="white",
+                font_size=10
+            )
+        )
+        
+        # Format peak times for display
+        peak_times = []
+        for _, period in top_periods.iterrows():
+            # Convert 24h time to 12h format for readability
+            hour = int(period['time_slot'].split(':')[0])
+            minute = period['time_slot'].split(':')[1]
+            ampm = 'am' if hour < 12 else 'pm'
+            hour_12 = hour if hour <= 12 else hour - 12
+            hour_12 = 12 if hour_12 == 0 else hour_12
+            peak_times.append(f"{hour_12}:{minute}{ampm}")
+        
+        return {
+            'figure': hour_fig,
+            'peak_times': peak_times,
+            'type': 'hourly'
+        }
+    else:
+        # Fall back to daily pattern if hourly data is not available
+        dow_data = current_period_data.copy()
+        dow_data['day_of_week'] = dow_data['Date'].dt.dayofweek
+        dow_data['day_name'] = dow_data['Date'].dt.day_name()
+        
+        # Aggregate by day of week
+        dow_avg = dow_data.groupby(['day_of_week', 'day_name'])['Total Usage'].mean().reset_index()
+        dow_avg = dow_avg.sort_values('day_of_week')
+        
+        # Create day of week chart with Canopy colors
+        dow_fig = px.bar(
+            dow_avg,
+            x='day_name',
+            y='Total Usage',
+            color='Total Usage',
+            color_continuous_scale=[[0, "#fde5d9"], [0.5, "#ff7a3a"], [1, "#fe5000"]],  # Canopy orange gradient
+            labels={'Total Usage': 'Energy (kWh)', 'day_name': 'Day of Week'}
+        )
+        
+        dow_fig.update_layout(
+            coloraxis_showscale=False,
+            height=240,  # Adjusted height
+            margin=dict(l=5, r=5, t=5, b=20),
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(
+                title=None,  # Remove axis title
+                gridcolor='#fde5d9',
+                categoryorder='array',
+                categoryarray=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                tickfont=dict(size=9)
+            ),
+            yaxis=dict(
+                title=None,  # Remove axis title
+                gridcolor='#fde5d9',
+                tickfont=dict(size=9)
+            ),
+            hoverlabel=dict(
+                bgcolor="white",
+                font_size=10
+            )
+        )
+        
+        # Find highest usage days
+        top_days = dow_avg.nlargest(2, 'Total Usage')
+        
+        return {
+            'figure': dow_fig,
+            'peak_days': top_days['day_name'].tolist(),
+            'type': 'daily'
+        }
+
 # Main dashboard
 def main():
-    # Load custom CSS
+    st.cache_data.clear()
+    # Add responsive JavaScript for detecting mobile devices and fitting text
     st.markdown("""
-    <style>
-        /* Main header styling */
-        .header-container {
-            background-color: #065f46;
-            padding: 1.2rem;
-            border-radius: 0.75rem;
-            color: white;
-            text-align: center;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .header-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0;
-            color: white;
-        }
-        .header-subtitle {
-            font-size: 1.2rem;
-            margin: 0;
-            opacity: 0.9;
-        }
-        
-        .card {
-            background-color: white;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border: 1px solid #f0f0f0;
-            margin-bottom: 1rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-            height: 200px; /* Fixed height for all cards */
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between; /* Distribute space evenly */
-        }
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-        }
-        /* Custom metric styling */
-        .metric-label {
-            font-size: 1rem;
-            color: #6B7280;
-            margin-bottom: 0.5rem;
-        }
-        .metric-value {
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: #1F2937;
-            margin: 0.6rem 0;
-        }
-        .metric-delta {
-            font-size: 0.95rem;
-            color: #059669; /* Green for positive change */
-            font-weight: 600; /* Make the text bolder */
-            padding: 0.25rem 0.5rem;
-            background-color: #ECFDF5; /* Light green background */
-            border-radius: 0.5rem;
-            display: inline-block; /* Ensure the background only covers the text */
-        }
-        .metric-delta.negative {
-            color: #dc2626; /* Red for negative change */
-            background-color: #FEE2E2; /* Light red background */
-        }
-        .metric-caption {
-            font-size: 0.9rem;
-            color: #6B7280;
-            margin-top: 0.5rem;
-        }
-        /* Data quality indicator styling */
-        .data-quality-container {
-            margin-bottom: 1.5rem;
-        }
-        .data-quality-indicator {
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid #e5e7eb;
-            background-color: #f9fafb;
-        }
-        /* Charts row styling */
-        .charts-section {
-            margin-bottom: 2rem;
-            display: flex;
-            gap: 1.5rem;
-        }
-        
-        /* Section styling */
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-top: 0;
-            margin-bottom: 1rem;
-            color: #1F2937;
-        }
-        
-        /* Champion styling */
-        .champion-container {
-            background-color: #ecfdf5;
-            border-radius: 0.75rem;
-            padding: 1.25rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            display: flex;
-            align-items: center;
-            gap: 1.25rem;
-            border: 1px solid #A7F3D0;
-        }
-        .champion-info {
-            flex: 1;
-        }
-        .champion-info h3 {
-            margin-top: 0;
-            margin-bottom: 0.5rem;
-            color: #065f46;
-        }
-        .champion-info p {
-            margin: 0;
-            line-height: 1.5;
-            color: #065f46;
-        }
-        .champion-photo {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #059669;
-            box-shadow: 0 4px 8px rgba(5, 150, 105, 0.2);
-        }
-        
-        .progress-bar-bg {
-            height: 24px;
-            background-color: #e5e7eb;
-            border-radius: 9999px;
-            margin: 0.75rem 0;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 24px;
-            background-color: #059669;
-            border-radius: 9999px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            transition: width 1s ease-in-out;
-        }
-        
-        /* Energy tips */
-        .tips-section {
-            background-color: #f0fdf4;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border: 1px solid #A7F3D0;
-        }
-        .tips-section h3 {
-            margin-top: 0;
-            margin-bottom: 0.75rem;
-            color: #065f46;
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-        .tips-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-top: 0.75rem;
-        }
-        .tip-chip {
-            background-color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border: 1px solid #d1fae5;
-            transition: transform 0.2s;
-        }
-        .tip-chip:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            background-color: #ecfdf5;
-        }
-        
-        /* Footer */
-        .footer {
-            text-align: center;
-            margin-top: 2.5rem;
-            color: #9CA3AF;
-            font-size: 0.8rem;
-            padding-bottom: 1rem;
-        }
-        
-        /* Fix for Streamlit's default margins */
-        .block-container {
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-            max-width: 1200px; /* Adjust as needed */
-        }
-        
-        /* Fix for plot background */
-        .js-plotly-plot .plotly .main-svg {
-            background-color: transparent !important;
-        }
-        
-        /* Responsive fixes for small screens */
-        @media (max-width: 768px) {
-            .kpi-value {
-                font-size: 1.75rem;
-            }
-            .kpi-label {
-                font-size: 0.8rem;
-            }
-            .champion-container {
-                flex-direction: column;
-                text-align: center;
-            }
-            .champion-photo {
-                margin-bottom: 0.75rem;
-            }
-            .charts-section {
-                flex-direction: column;
+    <script>
+        // Add mobile class to body if screen width is less than 768px
+        function checkMobile() {
+            if (window.innerWidth < 768) {
+                document.body.classList.add('mobile');
+                
+                // Find all elements with the class 'row' and add the 'mobile-stack' class
+                const rows = document.querySelectorAll('.row');
+                rows.forEach(row => {
+                    row.classList.add('mobile-stack');
+                });
+                
+                // Add a class to the document root for CSS targeting
+                document.documentElement.classList.add('mobile-view');
+            } else {
+                document.body.classList.remove('mobile');
+                document.documentElement.classList.remove('mobile-view');
+                
+                // Remove 'mobile-stack' class from rows
+                const rows = document.querySelectorAll('.row');
+                rows.forEach(row => {
+                    row.classList.remove('mobile-stack');
+                });
             }
         }
-    </style>
+        
+        // Run mobile detection on load and on resize
+        window.addEventListener('load', checkMobile);
+        window.addEventListener('resize', checkMobile);
+        
+        // Function to ensure text fits within fixed height cards
+        function adjustCardText() {
+            // Handle metric values
+            document.querySelectorAll('.metric-value').forEach(el => {
+                const originalFontSize = parseFloat(getComputedStyle(el).fontSize);
+                let fontSize = originalFontSize;
+                
+                // If text overflows, reduce font size
+                while (el.scrollWidth > el.offsetWidth && fontSize > 9) {
+                    fontSize -= 0.5;
+                    el.style.fontSize = fontSize + 'px';
+                }
+                
+                // If text still overflows at minimum size, add ellipsis
+                if (el.scrollWidth > el.offsetWidth) {
+                    el.style.textOverflow = 'ellipsis';
+                }
+            });
+            
+            // Handle metric labels
+            document.querySelectorAll('.metric-label').forEach(el => {
+                if (el.scrollHeight > el.offsetHeight) {
+                    el.style.webkitLineClamp = '1';
+                }
+            });
+            
+            // Handle metric deltas - these can wrap but need to fit vertically
+            document.querySelectorAll('.metric-delta').forEach(el => {
+                if (el.scrollHeight > el.offsetHeight) {
+                    let text = el.textContent;
+                    // Shorten text if it's too long
+                    if (text.length > 30) {
+                        el.textContent = text.substring(0, 27) + '...';
+                    }
+                }
+            });
+            
+            // Handle champion info text
+            document.querySelectorAll('.champion-info p').forEach(el => {
+                // Auto-adjust line clamp based on text length
+                const isMobile = window.innerWidth < 768;
+                if (isMobile) {
+                    el.style.webkitLineClamp = '2';
+                } else {
+                    el.style.webkitLineClamp = '3';
+                }
+            });
+            
+            // Ensure tip chips are visible
+            document.querySelectorAll('.tip-chip').forEach(chip => {
+                chip.style.color = '#fe5000';
+                chip.style.fontWeight = '600';
+            });
+        }
+        
+        // Run text adjustments after content loads
+        window.addEventListener('load', function() {
+            adjustCardText();
+            
+            // Check again after a slight delay to ensure all content is fully rendered
+            setTimeout(adjustCardText, 300);
+        });
+        
+        // Also run adjustments on resize
+        window.addEventListener('resize', adjustCardText);
+        
+        // Set mobile detection in sessionStorage
+        if (window.innerWidth < 768) {
+            sessionStorage.setItem('is_mobile', 'true');
+        } else {
+            sessionStorage.setItem('is_mobile', 'false');
+        }
+    </script>
     """, unsafe_allow_html=True)
-    
-    # Header
-    st.markdown("""
-    <div class="header-container">
-        <h1 class="header-title"> 🌍 {0} Celebrates Earth Day</h1>
-        <p class="header-subtitle">Our Planet, Our Power | April 14-22, 2025</p>
-    </div>
-    """.format(HOTEL_NAME), unsafe_allow_html=True)
     
     # Load data
     data = load_data()
@@ -524,497 +1011,436 @@ def main():
     # Define time periods
     today = datetime.today()
     
-    # For Earth Day challenge - UPDATED to include April 22nd
-    challenge_start = datetime(2025, 4, 14)
-    challenge_end = datetime(2025, 4, 22)  # Changed from 21st to 22nd
+    # For Earth Day challenge - UPDATED DATES
+    challenge_start = datetime(2025, 4, 15)  # Changed from 14 to 15
+    challenge_end = datetime(2025, 4, 22)  # Same end date
     
-    # For current view (last 30 days by default)
+    # For current view (default to Year to Date)
     current_end = today
-    current_start = today - timedelta(days=30)
+    current_start = datetime(today.year, 1, 1)  # Year to date by default
+    
+    # Header with period selector
+    header_col1, header_col2 = st.columns([4, 1])
+
+    with header_col1:
+        # Use base64 encoding to embed the image directly in the HTML
+        # This avoids Streamlit's image component and its expandable behavior
+        import base64
+        from pathlib import Path
+        
+        # Load and encode the image - updated for Canopy
+        img_path = "logos/eh.png"  # You'll need to replace this with Canopy logo
+        
+        # In the real app, you would use this with the actual Canopy logo file
+        try:
+            with open(img_path, "rb") as f:
+                img_data = base64.b64encode(f.read()).decode()
+            
+            # Create HTML with precise positioning and Canopy branding
+            st.markdown(f"""
+            <div style="display: flex; align-items: center; gap: 0;">
+                <img src="data:image/png;base64,{img_data}" 
+                    style="height: 55px; display: inline-block; margin: 0; padding: 0;"
+                    alt="Canopy by Hilton">
+                <span style="color: #fe5000; font-size: 1.5rem; font-weight: 700; font-family: 'Ebaqdesign', Helvetica, sans-serif; 
+                            display: inline-block; margin: 0; padding-left: 0;">
+                    CELEBRATES EARTH DAY 2025
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+        except:
+            # Fallback if image not found
+            st.markdown(f"""
+            <div style="display: flex; align-items: center; gap: 0;">
+                <div style="background-color: #fe5000; width: 55px; height: 55px; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-family: 'Ebaqdesign', Helvetica, sans-serif;">
+                    CANOPY
+                </div>
+                <span style="color: #fe5000; font-size: 1.5rem; font-weight: 700; font-family: 'Ebaqdesign', Helvetica, sans-serif; 
+                            display: inline-block; margin: 0; padding-left: 10px;">
+                    CELEBRATES EARTH DAY 2025
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+
+    with header_col2:
+        # Period selector
+        period = st.selectbox(
+            "",
+            options=[
+                "Year to Date",
+                "Last 7 Days", 
+                "Last 30 Days", 
+                "Earth Day Challenge"
+            ],
+            index=0,
+            label_visibility="collapsed"
+        )
+    # Set date ranges based on selection
+    if period == "Last 7 Days":
+        current_end = today
+        current_start = today - timedelta(days=7)
+    elif period == "Last 30 Days":
+        current_end = today
+        current_start = today - timedelta(days=30)
+    elif period == "Year to Date":
+        current_end = today
+        current_start = datetime(today.year, 1, 1)
+    elif period == "Earth Day Challenge":
+        if today > challenge_end:
+            current_start = challenge_start
+            current_end = challenge_end
+        else:
+            current_start = challenge_start - timedelta(days=365)
+            current_end = challenge_end - timedelta(days=365)
     
     # Get comparison period (same days last year)
     compare_start, compare_end = get_comparative_period(current_start, current_end)
     
-    # Calculation section
-    with st.sidebar:
-        st.subheader(f"{HOTEL_NAME} Hotel")
-        
-        # Time period selector
-        period = st.selectbox(
-            "Select Time Period:",
-            [
-                "Last 30 Days", 
-                "Last 7 Days", 
-                "Year to Date", 
-                "Earth Day Challenge Period"
-            ]
-        )
-        
-        if period == "Last 7 Days":
-            current_end = today
-            current_start = today - timedelta(days=7)
-        elif period == "Year to Date":
-            current_end = today
-            current_start = datetime(today.year, 1, 1)
-        elif period == "Earth Day Challenge Period":
-            # Use either actual dates if we're past Earth Day 2025 or projected dates
-            if today > challenge_end:
-                current_start = challenge_start
-                current_end = challenge_end
-            else:
-                # If we're before the challenge, use the dates from last year + a projected 15% improvement
-                current_start = challenge_start - timedelta(days=365)
-                current_end = challenge_end - timedelta(days=365)
-                st.info("Showing projected data for upcoming Earth Day Challenge")
-        
-        # Recalculate comparison period
-        compare_start, compare_end = get_comparative_period(current_start, current_end)
-        
-        # Display date ranges for clarity
-        st.caption(f"Current: {current_start.strftime('%b %d, %Y')} - {current_end.strftime('%b %d, %Y')}")
-        st.caption(f"Compare: {compare_start.strftime('%b %d, %Y')} - {compare_end.strftime('%b %d, %Y')}")
-    
     # Get KPIs using matched day pairs
     kpis = get_matched_kpis(data, current_start, current_end, compare_start, compare_end)
     
-    # KPI section using custom HTML metrics inside cards
-    st.markdown('<div class="kpi-section">', unsafe_allow_html=True)
-    kpi_cols = st.columns(4)
-
-    with kpi_cols[0]:
-        # For percent change, negative is good (reduction in usage), positive is bad (increase in usage)
-        change_color = "negative" if kpis['percent_change'] > 0 else ""
-        st.markdown(f"""
-        <div class="card">
-            <div>
-                <p class="metric-label">📊 COMPARED TO LAST YEAR</p>
-                <p class="metric-value">{abs(kpis['percent_change']):.1f}%</p>
-                <p class="metric-delta {change_color}">{"INCREASE" if kpis['percent_change'] > 0 else "REDUCTION"}</p>
+    # Get energy chart
+    try:
+        energy_chart = get_hourly_chart(data, current_start, current_end)
+    except Exception as e:
+        energy_chart = None
+    
+    # Check if on mobile for layout
+    is_mobile = st.session_state.get('is_mobile', False)
+    
+    # Row 1: KPIs and Champion - responsive layout
+    if is_mobile:
+        # Mobile layout - stack cards
+        row1_cols = st.columns([1])
+        
+        with row1_cols[0]:
+            # CO2 Saved
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">🌍 CO₂ SAVED</p>
+                <p class="metric-value">{kpis['co2_saved']:,.0f} kg</p>
+                <p class="metric-delta">CARBON REDUCTION</p>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with kpi_cols[1]:
-        # Energy saved is always positive and good
-        st.markdown(f"""
-        <div class="card">
-            <div>
+            """, unsafe_allow_html=True)
+            
+            # Energy saved
+            st.markdown(f"""
+            <div class="card">
                 <p class="metric-label">💡 ENERGY SAVED</p>
                 <p class="metric-value">{kpis['kwh_saved']:,.0f} kWh</p>
-                <p class="metric-delta">VS SAME PERIOD LAST YEAR</p>
+                <p class="metric-delta">VS LAST YEAR</p>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with kpi_cols[2]:
-        # CO₂ prevented is always positive and good
-        st.markdown(f"""
-        <div class="card">
-            <div>
-                <p class="metric-label">🌍 CO₂ PREVENTED</p>
-                <p class="metric-value">{kpis['co2_saved']:,.0f} kg</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with kpi_cols[3]:
-        # For daily average, negative change is bad (increase), positive is good (reduction)
-        daily_change = ((kpis['current_daily_avg'] - kpis['compare_daily_avg']) / kpis['compare_daily_avg']) * 100
-        change_color = "negative" if daily_change > 0 else ""
-        st.markdown(f"""
-        <div class="card">
-            <div>
-                <p class="metric-label">📅 DAILY AVERAGE</p>
-                <p class="metric-value">{kpis['current_daily_avg']:,.0f} kWh</p>
-                <p class="metric-delta {change_color}">{abs(daily_change):.1f}% vs last year</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Display data quality indicator
-    st.markdown('<div class="data-quality-container">', unsafe_allow_html=True)
-    quality_level = "High" if kpis['match_percentage'] > 80 else "Medium" if kpis['match_percentage'] > 50 else "Limited"
-    quality_color = "#059669" if kpis['match_percentage'] > 80 else "#d97706" if kpis['match_percentage'] > 50 else "#dc2626"
-
-    st.markdown(f"""
-    <div style="padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
-        <p style="margin-bottom: 8px; font-size: 15px; font-weight: 600;">Data Comparison Quality: <span style="color: {quality_color}">{quality_level}</span></p>
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="flex-grow: 1; background-color: #e5e7eb; height: 8px; border-radius: 4px;">
-                <div style="width: {kpis['match_percentage']}%; background-color: {quality_color}; height: 8px; border-radius: 4px;"></div>
-            </div>
-            <span style="font-size: 13px;">{kpis['match_percentage']:.0f}%</span>
-        </div>
-        <p style="margin-top: 8px; font-size: 13px; color: #6b7280;">
-            Based on {kpis['matched_day_count']} matched day pairs out of {kpis['expected_day_count']} expected days
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Add Sli.do interactive widget section
-    st.markdown('<div class="slido-container">', unsafe_allow_html=True)
-    st.markdown('<h3 class="section-title">Earth Day Feedback & Ideas</h3>', unsafe_allow_html=True)
-    
-    # Embed Sli.do using components.html
-    components.html(
-        """
-        <div style="width: 100%; height: 100%;">
-            <iframe src="https://wall.sli.do/event/kRXpQaYgkM2LcCozekgCeP/?section=7be5f035-0792-45b5-9041-ac87d9075f35" 
-                    frameborder="0" 
-                    style="width: 100%; height: 500px;" 
-                    allow="camera; microphone; fullscreen; display-capture; autoplay">
-            </iframe>
-        </div>
-        """,
-        height=520,
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="section-container">', unsafe_allow_html=True)
-    st.markdown('<h3 class="section-title">Green Champion</h3>', unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="champion-container">
-        <img src="https://ui-avatars.com/api/?name=Roxana&background=10B981&color=fff&size=100" class="champion-photo">
-        <div class="champion-info">
-            <h3>Roxana</h3>
-            <p>"Let's outperform our target! Find me at reception for energy-saving tips."</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Earth Day Challenge Section
-    st.markdown('<div class="progress-container">', unsafe_allow_html=True)
-    st.markdown('<h3>Earth Day Challenge</h3>', unsafe_allow_html=True)
-
-    # Calculate challenge progress values
-    days_until = (challenge_start - today).days
-    
-    if days_until > 0:
-        # Before challenge
-        progress_pct = 0
-        progress_label = f"Starts in {days_until} days"
-    elif days_until <= 0 and (today <= challenge_end):
-        # During challenge
-        day_of_challenge = abs(days_until) + 1
-        total_days = (challenge_end - challenge_start).days + 1
-        progress_pct = min(100, (day_of_challenge / total_days) * 100)
-        progress_label = f"Day {day_of_challenge} of {total_days}"
-    else:
-        # After challenge
-        progress_pct = 100
-        progress_label = "Challenge Complete"
-
-    # Progress bar
-    st.markdown(f"""
-    <div class="progress-bar-bg">
-        <div class="progress-bar" style="width: {progress_pct}%;">{progress_label}</div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Energy-saving tips with improved layout
-    st.markdown("""
-    <div class="tips-section">
-        <h3>Quick Energy-Saving Tips</h3>
-        <div class="tips-container">
-            <div class="tip-chip">💡 Turn off lights when leaving</div>
-            <div class="tip-chip">🚿 Shorter showers save water & energy</div>
-            <div class="tip-chip">🌡️ Keep thermostat at optimal 21-23°C</div>
-            <div class="tip-chip">☀️ Use natural light during daytime</div>
-            <div class="tip-chip">🔌 Unplug chargers when not in use</div>
-            <div class="tip-chip">🚶‍♂️ Take stairs instead of elevator</div>
-            <div class="tip-chip">🧺 Re-use towels to reduce laundry</div>
-            <div class="tip-chip">💧 Report water leaks immediately</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Update the charts layout with improved container
-    st.markdown('<div class="charts-section">', unsafe_allow_html=True)
-    chart_cols = st.columns(2)  # Two columns for side-by-side layout
-
-    # Year-over-Year Comparison Graph (Left Column)
-    with chart_cols[0]:
-        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-        st.markdown('<h3 class="section-title">Year-over-Year Comparison</h3>', unsafe_allow_html=True)
-        
-        # Get matched data pairs
-        matched_data = kpis['matched_data']
-        current_data = matched_data['current_data']
-        compare_data = matched_data['compare_data']
-        
-        # Create normalized day index for plotting
-        current_data = current_data.sort_values('Date')
-        current_data = current_data.reset_index(drop=True)
-        current_data['plot_index'] = current_data.index
-
-        compare_data = compare_data.sort_values('Date')  
-        compare_data = compare_data.reset_index(drop=True)
-        compare_data['plot_index'] = compare_data.index
-        
-        # Create plot
-        fig = go.Figure()
-        
-        # Add current period line
-        fig.add_trace(go.Scatter(
-            x=current_data['plot_index'], 
-            y=current_data['Total Usage'],
-            name=f'This Year',
-            line=dict(color='#059669', width=3),
-            hovertemplate='%{y:.0f} kWh<br>%{text}',
-            text=current_data['Date'].dt.strftime('%b %d')
-        ))
-        
-        # Add comparison period line
-        fig.add_trace(go.Scatter(
-            x=compare_data['plot_index'], 
-            y=compare_data['Total Usage'],
-            name=f'Last Year',
-            line=dict(color='#6B7280', width=2, dash='dash'),
-            hovertemplate='%{y:.0f} kWh<br>%{text}',
-            text=compare_data['Date'].dt.strftime('%b %d')
-        ))
-        
-        # Add shaded area for the difference (when current usage is lower than comparison)
-        if len(current_data) > 0 and len(compare_data) > 0 and kpis['percent_change'] < 0:
-            # Only include days where current usage is less than comparison
-            savings_data = current_data.copy()
-            savings_data['compare_usage'] = compare_data['Total Usage'].values
-            savings_data = savings_data[savings_data['Total Usage'] < savings_data['compare_usage']]
+            """, unsafe_allow_html=True)
             
-            if len(savings_data) > 0:
-                fig.add_trace(go.Scatter(
-                    x=savings_data['plot_index'],
-                    y=savings_data['compare_usage'],
-                    fill=None,
-                    mode='lines',
-                    line=dict(width=0),
-                    showlegend=False,
-                    hoverinfo='skip'
-                ))
-                
-                fig.add_trace(go.Scatter(
-                    x=savings_data['plot_index'],
-                    y=savings_data['Total Usage'],
-                    fill='tonexty',
-                    mode='lines',
-                    line=dict(width=0),
-                    fillcolor='rgba(5, 150, 105, 0.2)',
-                    name='Energy Saved',
-                    hoverinfo='skip'
-                ))
-        
-        # Create date labels for x-axis (display every nth point to avoid overcrowding)
-        step = max(1, len(current_data) // 10)
-        tick_indices = list(range(0, len(current_data), step))
-        date_labels = [current_data.iloc[i]['Date'].strftime('%b %d') for i in tick_indices if i < len(current_data)]
-        
-        fig.update_layout(
-            xaxis=dict(
-                tickmode='array',
-                tickvals=tick_indices,
-                ticktext=date_labels,
-                title='Date',
-                gridcolor='#f0f0f0'
-            ),
-            yaxis=dict(
-                title='Energy Usage (kWh)',
-                gridcolor='#f0f0f0'
-            ),
-            legend=dict(
-                orientation='h',
-                yanchor='bottom',
-                y=1.02,
-                xanchor='right',
-                x=1,
-                bgcolor='rgba(255,255,255,0.8)',
-                bordercolor='#f0f0f0',
-                borderwidth=1
-            ),
-            margin=dict(l=20, r=20, t=10, b=30),
-            height=450,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            hovermode='x unified',
-            title=dict(
-                text=f"Based on {len(current_data)} matched day pairs",
-                font=dict(size=12, color="#6b7280"),
-                x=0.5,
-                y=0.98
-            )
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # Peak Energy Hours Graph (Right Column)
-    with chart_cols[1]:
-        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-        st.markdown('<h3 class="section-title">Peak Energy Periods</h3>', unsafe_allow_html=True)
-        
-        try:
-            # Use full data for hourly analysis instead of just matched days
-            current_period_data = data[(data['Date'] >= current_start) & (data['Date'] <= current_end)]
+            # Guest Usage with lightbulb equivalence
+            # Calculate lightbulb equivalence (assuming standard UK 10W LED bulb running for 10 hours)
+            # 10W bulb for 10 hours = 0.1 kWh, so divide guest usage by 0.1 to get number of bulbs
+            lightbulb_equivalent = int(kpis['guest_usage'] / 0.1)
             
-            # Check if we have time columns in our data
-            time_cols = [f"{str(hour).zfill(2)}:{minute}" 
-                        for hour in range(24) 
-                        for minute in ['00', '30']]
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">👤 GUEST USAGE</p>
+                <p class="metric-value">{kpis['guest_usage']:,.2f} kWh</p>
+                <p class="metric-delta">= {lightbulb_equivalent} LED BULBS FOR 10 HOURS</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Progress to Goal - simplified with clearer progress indicators
+            current_percentage = abs(kpis['percent_change']) if kpis['percent_change'] < 0 else 0.0
+            target_percentage = kpis['target_savings_percent']
+            progress_towards_target = kpis['progress_percentage']  # This should already be 0 from your debug output
+
+            # Percentage remaining to target (if no progress, we need the full target)
+            percentage_remaining = max(0, target_percentage - current_percentage)
+
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">🎯 {target_percentage}% SAVINGS GOAL</p>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: {progress_towards_target}%;"></div>
+                </div>
+                <p class="metric-value">{current_percentage:.1f}% SAVED</p>
+                <p class="metric-delta">{percentage_remaining:.1f}% MORE NEEDED</p>
+            </div>
+            """, unsafe_allow_html=True)
                         
-            hourly_columns_exist = all(col in current_period_data.columns for col in time_cols[:4])  # Check at least first few
-            
-            if hourly_columns_exist:
-                # For half-hourly data, use the raw time columns directly
-                hh_data = []
-                
-                for col in time_cols:
-                    hh_data.append({
-                        'time_slot': col,
-                        'usage': current_period_data[col].mean()
-                    })
-                
-                hh_df = pd.DataFrame(hh_data)
-                
-                # Add hour information for sorting and grouping
-                hh_df['hour'] = hh_df['time_slot'].apply(lambda x: int(x.split(':')[0]))
-                hh_df['minute'] = hh_df['time_slot'].apply(lambda x: x.split(':')[1])
-                
-                # Find top 5 peak half-hour periods
-                top_periods = hh_df.nlargest(5, 'usage')
-                
-                # Create half-hourly chart
-                hour_fig = px.bar(
-                    hh_df,
-                    x='time_slot',
-                    y='usage',
-                    color='usage',
-                    color_continuous_scale='Viridis',
-                    labels={'usage': 'Energy (kWh)', 'time_slot': 'Time of Day'}
-                )
-                
-                # Only show every 2-hour label to avoid crowding
-                show_labels = hh_df.loc[hh_df['minute'] == '00', 'time_slot'].iloc[::2].tolist()
-                
-                hour_fig.update_layout(
-                    coloraxis_showscale=False,
-                    height=450,
-                    margin=dict(l=20, r=20, t=10, b=30),
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    xaxis=dict(
-                        tickmode='array',
-                        tickvals=show_labels,
-                        ticktext=show_labels,
-                        title='Time of Day',
-                        gridcolor='#f0f0f0'
-                    ),
-                    yaxis=dict(
-                        title='Energy (kWh)',
-                        gridcolor='#f0f0f0'
-                    ),
-                    hoverlabel=dict(
-                        bgcolor="white",
-                        font_size=12
-                    )
-                )
-                
-                st.plotly_chart(hour_fig, use_container_width=True)
-                
-                # Format peak times for display
-                peak_times = []
-                for _, period in top_periods.iterrows():
-                    # Convert 24h time to 12h format for readability
-                    hour = int(period['time_slot'].split(':')[0])
-                    minute = period['time_slot'].split(':')[1]
-                    ampm = 'am' if hour < 12 else 'pm'
-                    hour_12 = hour if hour <= 12 else hour - 12
-                    hour_12 = 12 if hour_12 == 0 else hour_12
-                    peak_times.append(f"{hour_12}:{minute}{ampm}")
-                
-                # Show peak half-hour periods
-                st.markdown(f"""
-                <div style="text-align: center;">
-                    <p><strong>Peak energy periods:</strong> {', '.join(peak_times)}</p>
-                    <p>Help us reduce energy during these high-demand times!</p>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                # Fall back to daily pattern if hourly data is not available
-                dow_data = current_period_data.copy()
-                dow_data['day_of_week'] = dow_data['Date'].dt.dayofweek
-                dow_data['day_name'] = dow_data['Date'].dt.day_name()
-                
-                # Aggregate by day of week
-                dow_avg = dow_data.groupby(['day_of_week', 'day_name'])['Total Usage'].mean().reset_index()
-                dow_avg = dow_avg.sort_values('day_of_week')
-                
-                # Create day of week chart
-                dow_fig = px.bar(
-                    dow_avg,
-                    x='day_name',
-                    y='Total Usage',
-                    color='Total Usage',
-                    color_continuous_scale='Viridis',
-                    labels={'Total Usage': 'Average Energy (kWh)', 'day_name': 'Day of Week'}
-                )
-                
-                dow_fig.update_layout(
-                    coloraxis_showscale=False,
-                    height=450,
-                    margin=dict(l=20, r=20, t=10, b=30),
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    xaxis=dict(
-                        title='Day of Week',
-                        gridcolor='#f0f0f0',
-                        categoryorder='array',
-                        categoryarray=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                    ),
-                    yaxis=dict(
-                        title='Average Energy (kWh)',
-                        gridcolor='#f0f0f0'
-                    ),
-                    hoverlabel=dict(
-                        bgcolor="white",
-                        font_size=12
-                    )
-                )
-                
-                st.plotly_chart(dow_fig, use_container_width=True)
-                
-                # Find highest usage days
-                top_days = dow_avg.nlargest(2, 'Total Usage')
-                
-                st.markdown(f"""
-                <div style="text-align: center;">
-                    <p><strong>Highest usage days:</strong> {', '.join(top_days['day_name'].tolist())}</p>
-                    <p>Hourly data not available - showing daily patterns instead</p>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        except Exception as e:
-            st.info(f"Energy pattern analysis not available: {str(e)}")
+            # Green Champion with Canopy styling
             st.markdown("""
-            <div style="text-align: center; padding: 20px;">
-                <p>⚠️ Energy pattern analysis currently unavailable</p>
-                <p>This may be due to missing hourly data in the database</p>
+            <div class="champion-container">
+                <img src="https://ui-avatars.com/api/?name=R&background=fe5000&color=fff&size=50" class="champion-photo">
+                <div class="champion-info">
+                    <h3>Roxana - Green Champion</h3>
+                    <p>"At EasyHotel Victoria, we're passionate about sustainable luxury. Visit our reception for neighborhood eco tips during your stay."</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        # Desktop layout - cards in a row
+        row1_cols = st.columns([1, 1, 1, 1, 3])
+        
+        # KPIs
+        with row1_cols[0]:
+            # CO2 SAVED
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">🌍 CO₂ SAVED</p>
+                <p class="metric-value">{kpis['co2_saved']:,.0f} kg</p>
+                <p class="metric-delta">CARBON REDUCTION</p>
             </div>
             """, unsafe_allow_html=True)
         
+        with row1_cols[1]:
+            # Energy saved
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">💡 ENERGY SAVED</p>
+                <p class="metric-value">{kpis['kwh_saved']:,.0f} kWh</p>
+                <p class="metric-delta">VS LAST YEAR</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with row1_cols[2]:
+            # Guest Usage with lightbulb equivalence
+            # Calculate lightbulb equivalence (assuming standard UK 10W LED bulb running for 10 hours)
+            # 10W bulb for 10 hours = 0.1 kWh, so divide guest usage by 0.1 to get number of bulbs
+            lightbulb_equivalent = int(kpis['guest_usage'] / 0.1)
+            
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">👤 GUEST USAGE</p>
+                <p class="metric-value">{kpis['guest_usage']:,.2f} kWh</p>
+                <p class="metric-delta">= {lightbulb_equivalent} LED BULBS FOR 10 HOURS</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with row1_cols[3]:
+            # Progress to Goal - simplified with clearer progress indicators
+            current_percentage = abs(kpis['percent_change']) if kpis['percent_change'] < 0 else 0.0
+            target_percentage = kpis['target_savings_percent']
+            progress_towards_target = kpis['progress_percentage']  # Use the correct value from KPIs
+            
+            # Percentage remaining to target
+            percentage_remaining = max(0, target_percentage - current_percentage)
+            
+            st.markdown(f"""
+            <div class="card">
+                <p class="metric-label">🎯{target_percentage}% GOAL</p>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: {progress_towards_target}%;"></div>
+                </div>
+                <p class="metric-value">{current_percentage:.1f}% SAVED</p>
+                <p class="metric-delta">{percentage_remaining:.1f}% MORE NEEDED</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with row1_cols[4]:
+            # Green Champion with Canopy styling
+            st.markdown("""
+            <div class="champion-container">
+                <img src="https://ui-avatars.com/api/?name=L&background=fe5000&color=fff&size=50" class="champion-photo">
+                <div class="champion-info">
+                    <h3>Lucyna - Green Champion</h3>
+                    <p>"At Canopy by Hilton London City, we're passionate about sustainable luxury. Visit our reception for neighborhood eco tips during your stay."</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+# Row 2: Main content - chart and tips - responsive layout
+    if is_mobile:
+        # Mobile layout - stack columns
+        # Peak Energy Chart 
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<h3 class="chart-title">Peak Energy Periods</h3>', unsafe_allow_html=True)
+        
+        if energy_chart:
+            st.plotly_chart(energy_chart['figure'], use_container_width=True, config={'displayModeBar': False})
+            
+            if energy_chart['type'] == 'hourly':
+                st.markdown(f"""
+                <p class="chart-subtitle">
+                    <strong>Peak times:</strong> {', '.join(energy_chart['peak_times'][:3])}
+                </p>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <p class="chart-subtitle">
+                    <strong>Highest usage:</strong> {', '.join(energy_chart['peak_days'])}
+                </p>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("Energy data unavailable")
+        
         st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Footer with minimal text
+        
+        # Slido with Canopy styled title
+        st.markdown('<div class="feedback-container">', unsafe_allow_html=True)
+        st.markdown('<h3 class="feedback-title">Local Green Initiatives</h3>', unsafe_allow_html=True)
+        
+        # Embed Sli.do with adjusted height and clickable link
+        st.markdown("""
+        <a href="https://app.sli.do/event/kRXpQaYgkM2LcCozekgCeP" target="_blank" style="font-size: 0.75rem; color: #fe5000; margin-bottom: 5px; display: block;">
+            📱 Click here to open Slido on your device
+        </a>
+        """, unsafe_allow_html=True)
+        
+        components.html(
+            """
+            <iframe src="https://wall.sli.do/event/kRXpQaYgkM2LcCozekgCeP/?section=7be5f035-0792-45b5-9041-ac87d9075f350" 
+                    frameborder="0" 
+                    style="width: 100%; height: 230px;" 
+                    allow="camera; microphone; fullscreen; display-capture; autoplay">
+            </iframe>
+            """,
+            height=250,
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        # Desktop layout - side by side
+        row2_cols = st.columns([1, 1])
+        
+        # Peak Energy Chart 
+        with row2_cols[0]:
+            st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+            st.markdown('<h3 class="chart-title">Peak Energy Periods</h3>', unsafe_allow_html=True)
+            
+            if energy_chart:
+                st.plotly_chart(energy_chart['figure'], use_container_width=True, config={'displayModeBar': False})
+                
+                if energy_chart['type'] == 'hourly':
+                    st.markdown(f"""
+                    <p class="chart-subtitle">
+                        <strong>Peak times:</strong> {', '.join(energy_chart['peak_times'][:3])}
+                    </p>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <p class="chart-subtitle">
+                        <strong>Highest usage:</strong> {', '.join(energy_chart['peak_days'])}
+                    </p>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("Energy data unavailable")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Slido with EH styled title
+        with row2_cols[1]:
+            st.markdown('<div class="feedback-container">', unsafe_allow_html=True)
+            st.markdown('<h3 class="feedback-title">Local Green Initiatives</h3>', unsafe_allow_html=True)
+            
+            # Embed Sli.do with adjusted height and clickable link
+            st.markdown("""
+            <a href="https://app.sli.do/event/raPH3EvtzJPnVW84kh7svV" target="_blank" style="font-size: 0.75rem; color: #fe5000; margin-bottom: 5px; display: block;">
+                📱 Click here to open Slido on your device
+            </a>
+            """, unsafe_allow_html=True)
+            
+            components.html(
+                """
+                <iframe src="https://wall.sli.do/event/raPH3EvtzJPnVW84kh7svV/?section=a91516a6-832e-408d-9afa-ec3f5034e0b2" 
+                        frameborder="0" 
+                        style="width: 100%; height: 230px;" 
+                        allow="camera; microphone; fullscreen; display-capture; autoplay">
+                </iframe>
+                """,
+                height=250,
+            )
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+    # Row 3: Tips section in full width - ensure it's scrollable on small screens
+        # Row 3: Tips section in full width - ensure it's scrollable on small screens
     st.markdown("""
-    <div class="footer">
-        {0} Earth Day Challenge 2025 | Last Updated: {1}
+    <div class="tips-section">
+        <h3>Sustainable Travel Tips</h3>
+        <div class="tips-container">
+            <div class="tip-chip">💡 Use natural lighting</div>
+            <div class="tip-chip">🚿 Take shorter showers</div>
+            <div class="tip-chip">🌡️ Keep thermostat at 21°C</div>
+            <div class="tip-chip">☀️ Open curtains during day</div>
+            <div class="tip-chip">🔌 Unplug unused devices</div>
+            <div class="tip-chip">🚶‍♂️ Use the stairs</div>
+            <div class="tip-chip">🧺 Reuse towels & linens</div>
+            <div class="tip-chip">💧 Report water leaks</div>
+            <div class="tip-chip">📱 Go paperless</div>
+            <div class="tip-chip">🚪 Close doors</div>
+            <div class="tip-chip">🔆 Use task lighting</div>
+            <div class="tip-chip">🌱 Share your green ideas</div>
+            <div class="tip-chip">♻️ Use recycle bins</div>
+            <div class="tip-chip">🔧 Report maintenance issues</div>
+            <div class="tip-chip">💻 Power down electronics</div>
+        </div>
     </div>
-    """.format(HOTEL_NAME, datetime.now().strftime("%b %d, %Y")), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+    st.markdown("""
+        <style>
+            .stay-smart-message {
+                text-align: center;  /* Centers the text horizontally */
+
+            }
+        </style>
+        <div class="stay-smart-message">
+            "Stay Green. Make A Difference." - Canopy by Hilton London City
+        </div>
+        """, unsafe_allow_html=True)
+    # Footer with Holiday Inn branding and matched days info
+    st.markdown(f"""
+    <div class="footer">
+        Canopy by Hilton London City | Earth Day Challenge | {current_start.strftime('%b %d')} - {current_end.strftime('%b %d, %Y')} | vs {compare_start.strftime('%b %d')} - {compare_end.strftime('%b %d, %Y')} | Based on {kpis['matched_day_count']} matched days out of {kpis['expected_day_count']} expected
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Set session state based on screen width at start
+    if 'is_mobile' not in st.session_state:
+        # Default to desktop view initially
+        st.session_state['is_mobile'] = False
+        
+    # Add extra JavaScript to ensure tip-chips are fully visible in all modes
+    st.markdown("""
+    <script>
+        // Function to ensure tip chips are visible
+        function ensureTipChipsVisible() {
+            document.querySelectorAll('.tip-chip').forEach(chip => {
+                // Force color and font weight to ensure visibility
+                chip.style.color = '#00A94F';
+                chip.style.fontWeight = '600';
+                
+                // Add hover effect
+                chip.addEventListener('mouseover', function() {
+                    this.style.backgroundColor = '#e8f4ec';
+                    this.style.color = '#007a3e';
+                });
+                
+                chip.addEventListener('mouseout', function() {
+                    this.style.backgroundColor = 'white';
+                    this.style.color = '#00A94F';
+                });
+                
+                // Handle dark mode
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    chip.style.backgroundColor = '#2c3e2f';
+                    chip.style.color = '#4ca97a';
+                    # chip.style.borderColor = '#00A94F';
+                    
+                    // Dark mode hover effect
+                    chip.addEventListener('mouseover', function() {
+                        this.style.backgroundColor = '#37514a';
+                        this.style.color = '#93d1a7';
+                    });
+                    
+                    chip.addEventListener('mouseout', function() {
+                        this.style.backgroundColor = '#2c3e2f';
+                        this.style.color = '#4ca97a';
+                    });
+                }
+            });
+        }
+        
+        // Run after DOM is loaded
+        document.addEventListener('DOMContentLoaded', ensureTipChipsVisible);
+        
+        // Also run after a slight delay to ensure all content is loaded
+        setTimeout(ensureTipChipsVisible, 500);
+    </script>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
