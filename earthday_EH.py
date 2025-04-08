@@ -26,7 +26,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Set the specific hotel for this dashboard
-HOTEL_NAME = "EH
+HOTEL_NAME = "EH"
 
 # MPAN to Hotel mapping
 mpan_to_hotel = {
