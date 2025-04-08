@@ -1041,7 +1041,7 @@ def main():
             <div style="display: flex; align-items: center; gap: 0;">
                 <img src="data:image/png;base64,{img_data}" 
                     style="height: 55px; display: inline-block; margin: 0; padding: 0;"
-                    alt="Canopy by Hilton">
+                    alt="EasyHotel Victoria">
                 <span style="color: #fe5000; font-size: 1.5rem; font-weight: 700; font-family: 'Ebaqdesign', Helvetica, sans-serif; 
                             display: inline-block; margin: 0; padding-left: 0;">
                     CELEBRATES EARTH DAY 2025
@@ -1053,7 +1053,7 @@ def main():
             st.markdown(f"""
             <div style="display: flex; align-items: center; gap: 0;">
                 <div style="background-color: #fe5000; width: 55px; height: 55px; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-family: 'Ebaqdesign', Helvetica, sans-serif;">
-                    CANOPY
+                    EH
                 </div>
                 <span style="color: #fe5000; font-size: 1.5rem; font-weight: 700; font-family: 'Ebaqdesign', Helvetica, sans-serif; 
                             display: inline-block; margin: 0; padding-left: 10px;">
@@ -1378,13 +1378,13 @@ def main():
             }
         </style>
         <div class="stay-smart-message">
-            "Stay Green. Make A Difference." - Canopy by Hilton London City
+            "Stay Green. Make A Difference." - EasyHotel Victoria
         </div>
         """, unsafe_allow_html=True)
     # Footer with Holiday Inn branding and matched days info
     st.markdown(f"""
     <div class="footer">
-        Canopy by Hilton London City | Earth Day Challenge | {current_start.strftime('%b %d')} - {current_end.strftime('%b %d, %Y')} | vs {compare_start.strftime('%b %d')} - {compare_end.strftime('%b %d, %Y')} | Based on {kpis['matched_day_count']} matched days out of {kpis['expected_day_count']} expected
+        EasyHotel Victoria | Earth Day Challenge | {current_start.strftime('%b %d')} - {current_end.strftime('%b %d, %Y')} | vs {compare_start.strftime('%b %d')} - {compare_end.strftime('%b %d, %Y')} | Based on {kpis['matched_day_count']} matched days out of {kpis['expected_day_count']} expected
     </div>
     """, unsafe_allow_html=True)
     
