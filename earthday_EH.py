@@ -1239,8 +1239,8 @@ def main():
             <div class="champion-container">
                 <img src="https://ui-avatars.com/api/?name=L&background=fe5000&color=fff&size=50" class="champion-photo">
                 <div class="champion-info">
-                    <h3>Lucyna - Green Champion</h3>
-                    <p>"At Canopy by Hilton London City, we're passionate about sustainable luxury. Visit our reception for neighborhood eco tips during your stay."</p>
+                    <h3>Roxana - Green Champion</h3>
+                    <p>"At EasyHotel Victoria, we're passionate about sustainable luxury. Visit our reception for neighborhood eco tips during your stay."</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)

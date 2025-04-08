@@ -1239,7 +1239,7 @@ def main():
             <div class="champion-container">
                 <img src="https://ui-avatars.com/api/?name=S&background=002d72&color=fff&size=50" class="champion-photo">
                 <div class="champion-info">
-                    <h3>Suleman- Green Champions</h3>
+                    <h3>Suleman - Green Champion</h3>
                     <p>"At Holiday Inn Express St Albans, we're committed to staying smart about sustainability. Visit us for practical energy-saving tips for your stay."</p>
                 </div>
             </div>

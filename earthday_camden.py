@@ -1230,9 +1230,9 @@ def main():
             # Green Champion with Holiday Inn styling
             st.markdown("""
             <div class="champion-container">
-                <img src="https://ui-avatars.com/api/?name=JL&background=00A94F&color=fff&size=50" class="champion-photo">
+                <img src="https://ui-avatars.com/api/?name=C&background=00A94F&color=fff&size=50" class="champion-photo">
                 <div class="champion-info">
-                    <h3>Jamie and Lisa - Green Champions</h3>
+                    <h3>Chinmay - Green Champion</h3>
                     <p>"At Holiday Inn Camden, we're committed to creating a greener future. Visit our reception for energy-saving tips during your stay."</p>
                 </div>
             </div>
