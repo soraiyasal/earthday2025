@@ -1,3 +1,5 @@
+
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -6,15 +8,24 @@ import numpy as np
 from datetime import datetime
 import streamlit.components.v1 as components  # Import components for HTML embedding
 
-# Set page config
+# Set page config - set to wide layout by default
 st.set_page_config(
-    page_title="Hotel Energy Dashboard", 
+    page_title="Comfort Inn Victoria Earth Day Dashboard", 
     page_icon="🌍", 
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"  # Start with sidebar collapsed
 )
 
 # Constants
 ELECTRICITY_FACTOR = 0.20493  # CO2 emission factor for electricity
+SELECTED_HOTEL = 'CIV'  # Fixed to CIV, no selection needed
+
+# Comfort Inn Brand Colors
+COMFORT_BLUE = "#003B71"
+COMFORT_ORANGE = "#F37021"
+COMFORT_YELLOW = "#FFC72C"
+COMFORT_LIGHT_BLUE = "#E0F2FE"
+COMFORT_LIGHT_GREEN = "#ECFDF5"
 
 # Load and process data
 def load_data():
@@ -52,7 +63,7 @@ def load_data():
         return pd.DataFrame()
 
 # Calculate comparison for Jan-March
-def calculate_q1_comparison(df, hotel='CIV'):
+def calculate_q1_comparison(df, hotel=SELECTED_HOTEL):
     try:
         # Get Jan-March months
         q1_months = [1, 2, 3]  # Jan, Feb, Mar
@@ -106,7 +117,7 @@ def calculate_q1_comparison(df, hotel='CIV'):
         return None
 
 # Create a simple Jan-March comparison chart
-def create_q1_chart(df, comparison, hotel):
+def create_q1_chart(df, comparison, hotel=SELECTED_HOTEL):
     try:
         if not comparison:
             return None
@@ -146,20 +157,21 @@ def create_q1_chart(df, comparison, hotel):
         # Create dataframe
         chart_df = pd.DataFrame(chart_data)
         
-        # Create chart
+        # Create chart with Comfort Inn colors
         fig = px.bar(
             chart_df, 
             x='Month', 
             y='Value', 
             color='Year',
-            title=f"Jan - March Comparison: {hotel} ({previous_year} vs {current_year})",
             labels={'Value': 'Energy (kWh)', 'Month': 'Month'},
             barmode='group',
-            text_auto=True
+            text_auto='.2s',  # Use shortened number format
+            color_discrete_sequence=[COMFORT_BLUE, COMFORT_ORANGE]  # Use Comfort Inn colors
         )
         
         # Update layout - FIXED xaxis property
         fig.update_layout(
+            margin=dict(l=10, r=10, t=10, b=10),  # Compact margins
             xaxis=dict(
                 categoryorder='array',
                 categoryarray=['Jan', 'Feb', 'Mar']
@@ -167,7 +179,10 @@ def create_q1_chart(df, comparison, hotel):
             yaxis=dict(
                 title='Energy (kWh)',
                 tickformat=','
-            )
+            ),
+            plot_bgcolor='rgba(255, 255, 255, 0.9)',
+            paper_bgcolor='rgba(255, 255, 255, 0.9)',
+            font=dict(family='Arial, sans-serif')
         )
         
         return fig
@@ -176,7 +191,7 @@ def create_q1_chart(df, comparison, hotel):
         return None
 
 # Create trend chart with Jan-March highlighted
-def create_trend_chart(df, hotel, highlight_q1=True):
+def create_trend_chart(df, hotel=SELECTED_HOTEL, highlight_q1=True):
     try:
         if len(df) == 0:
             return None
@@ -189,7 +204,7 @@ def create_trend_chart(df, hotel, highlight_q1=True):
                 axis=1
             )
             
-            # Create chart with Jan-March highlighted
+            # Create chart with Jan-March highlighted with Comfort Inn colors
             fig = px.line(
                 df,
                 x='Date',
@@ -198,8 +213,8 @@ def create_trend_chart(df, hotel, highlight_q1=True):
                 markers=True,
                 labels={'Date': 'Month', hotel: 'Energy (kWh)'},
                 color_discrete_map={
-                    'Jan - March': '#2E8B57',  # Green for Jan-March
-                    'Other Months': '#A9A9A9'  # Grey for other months
+                    'Jan - March': COMFORT_ORANGE,  # Orange for Jan-March
+                    'Other Months': COMFORT_BLUE    # Blue for other months
                 }
             )
         else:
@@ -209,12 +224,13 @@ def create_trend_chart(df, hotel, highlight_q1=True):
                 x='Date',
                 y=hotel,
                 markers=True,
-                labels={'Date': 'Month', hotel: 'Energy (kWh)'}
+                labels={'Date': 'Month', hotel: 'Energy (kWh)'},
+                line_color=COMFORT_BLUE
             )
         
         # Format chart
         fig.update_layout(
-            title=f"Monthly Energy Usage: {hotel}",
+            title=f"Monthly Energy Usage Trend",
             xaxis=dict(
                 tickformat='%b %Y',
                 tickangle=-45
@@ -222,7 +238,10 @@ def create_trend_chart(df, hotel, highlight_q1=True):
             yaxis=dict(
                 title='Energy (kWh)',
                 tickformat=','
-            )
+            ),
+            plot_bgcolor='rgba(255, 255, 255, 0.9)',
+            paper_bgcolor='rgba(255, 255, 255, 0.9)',
+            font=dict(family='Arial, sans-serif')
         )
         
         return fig
@@ -232,86 +251,225 @@ def create_trend_chart(df, hotel, highlight_q1=True):
 
 # Main function
 def main():
-    # Load CSS for champion section
-    st.markdown("""
+    # Load CSS with Comfort Inn branding
+    st.markdown(f"""
     <style>
-        .champion-container {
-            background-color: #ecfdf5;
-            border-radius: 0.75rem;
-            padding: 1.25rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        /* Main container adjustments to prevent scrolling */
+        .main .block-container {{
+            padding-top: 0.5rem;
+            padding-bottom: 0;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            max-width: 100%;
+        }}
+        
+        /* Comfort Inn specific styling */
+        .comfort-header {{
+            background: linear-gradient(to right, {COMFORT_BLUE}, {COMFORT_BLUE}e0);
+            padding: 0.7rem 1rem;
+            border-radius: 0.5rem;
+            color: white;
             display: flex;
             align-items: center;
-            gap: 1.25rem;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        
+        .comfort-logo {{
+            font-family: 'Arial', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white;
+            display: flex;
+            align-items: center;
+        }}
+        
+        .comfort-logo-icon {{
+            color: {COMFORT_YELLOW};
+            margin-right: 0.5rem;
+            font-size: 1.7rem;
+        }}
+        
+        .comfort-tagline {{
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }}
+        
+        .champion-container {{
+            background-color: {COMFORT_LIGHT_GREEN};
+            border-radius: 0.5rem;
+            padding: 0.8rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
             border: 1px solid #A7F3D0;
-            margin-bottom: 2rem;
-        }
-        .champion-info {
+            margin-bottom: 1rem;
+        }}
+        
+        .champion-info {{
             flex: 1;
-        }
-        .champion-info h3 {
+        }}
+        
+        .champion-info h3 {{
             margin-top: 0;
-            margin-bottom: 0.5rem;
-            color: #065f46;
-        }
-        .champion-info p {
+            margin-bottom: 0.3rem;
+            color: {COMFORT_BLUE};
+            font-size: 1rem;
+        }}
+        
+        .champion-info p {{
             margin: 0;
-            line-height: 1.5;
-            color: #065f46;
-        }
-        .champion-photo {
-            width: 100px;
-            height: 100px;
+            line-height: 1.3;
+            color: #333;
+            font-size: 0.9rem;
+        }}
+        
+        .champion-photo {{
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             object-fit: cover;
-            border: 3px solid #059669;
-            box-shadow: 0 4px 8px rgba(5, 150, 105, 0.2);
-        }
-        .header-container {
-            background-color: #065f46;
-            padding: 1.2rem;
-            border-radius: 0.75rem;
-            color: white;
+            border: 3px solid {COMFORT_ORANGE};
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        
+        /* Energy savings banner */
+        .energy-savings-banner {{
+            background-color: {COMFORT_LIGHT_BLUE};
+            padding: 0.6rem;
+            border-radius: 0.3rem;
+            margin: 0.5rem 0 0.5rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: space-between;
+            border: 1px solid {COMFORT_BLUE}40;
+        }}
+        
+        .energy-reminder {{
+            background-color: white;
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.3rem;
+            margin: 0;
+            flex: 1 1 auto;
+            min-width: 150px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             text-align: center;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .header-title {
-            font-size: 2.5rem;
-            font-weight: 700;
+            border-left: 3px solid {COMFORT_BLUE};
+        }}
+        
+        .energy-reminder p {{
             margin: 0;
-            color: white;
-        }
-        .header-subtitle {
-            font-size: 1.2rem;
-            margin: 0;
-            opacity: 0.9;
-        }
-        .energy-tip {
-            background-color: #e0f2fe;
-            border-left: 4px solid #0ea5e9;
-            padding: 1rem;
+            color: #333;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }}
+        
+        /* Custom metric styles */
+        .metric-card {{
+            background-color: white;
             border-radius: 0.5rem;
-            margin-bottom: 1rem;
+            padding: 0.7rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .energy-tip h4 {
-            margin-top: 0;
+            border-top: 3px solid {COMFORT_ORANGE};
+            text-align: center;
+            height: 100%;
+        }}
+        
+        .metric-value {{
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: {COMFORT_BLUE};
+            margin: 0.3rem 0;
+        }}
+        
+        .metric-label {{
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 0.3rem;
+        }}
+        
+        .metric-delta {{
+            font-size: 0.8rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 1rem;
+            display: inline-block;
+        }}
+        
+        .metric-delta.positive {{
+            background-color: #ECFDF5;
+            color: #065F46;
+        }}
+        
+        .metric-delta.negative {{
+            background-color: #FEF2F2;
+            color: #991B1B;
+        }}
+        
+        /* Section headings */
+        h3 {{
+            color: {COMFORT_BLUE};
+            margin-top: 0.7rem;
             margin-bottom: 0.5rem;
-            color: #0369a1;
-        }
-        .energy-tip p {
-            margin: 0;
-            color: #0c4a6e;
-        }
+            font-size: 1.1rem;
+        }}
+        
+        /* Footer */
+        .footer {{
+            text-align: center;
+            padding: 0.5rem;
+            color: #666;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }}
+        
+        /* Make all cards the same height */
+        .equal-height {{
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }}
+        
+        /* Reduce padding for plotly charts */
+        .js-plotly-plot {{
+            padding: 0 !important;
+        }}
+        
+        .js-plotly-plot .plotly {{
+            min-height: 0 !important;
+        }}
+        
+        /* Hide fullscreen button on plotly charts */
+        .modebar-btn[data-title="Toggle Fullscreen"] {{
+            display: none !important;
+        }}
+        
+        /* Compress whitespace in general */
+        .block-container > div:first-child {{
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+        }}
+        
+        /* Hide element overflows */
+        .element-container {{
+            overflow: hidden;
+        }}
     </style>
     """, unsafe_allow_html=True)
     
-    # Header
-    st.markdown("""
-    <div class="header-container">
-        <h1 class="header-title">🌍 Comfort Inn Victoria Earth Day Energy Dashboard</h1>
-        <p class="header-subtitle">Power Up Initiative | April 2025</p>
+    # Custom Comfort Inn Header with logo
+    st.markdown(f"""
+    <div class="comfort-header">
+        <div class="comfort-logo">
+            <span class="comfort-logo-icon">☀️</span>
+            Comfort Inn Victoria
+        </div>
+        <div class="comfort-tagline">
+            Earth Day Energy Dashboard | April 2025
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -322,71 +480,65 @@ def main():
         st.error("No data loaded. Please check your elec.csv file.")
         return
     
-    # Sidebar
-    with st.sidebar:
-        st.title("Dashboard Controls")
-        
-        # Hotel selection
-        hotel_columns = [col for col in df.columns if col not in ['Month', 'Date', 'Year', 'MonthNum', 'MonthName']]
-        if hotel_columns:
-            selected_hotel = st.selectbox(
-                "Select Hotel:",
-                hotel_columns,
-                index=hotel_columns.index('CIV') if 'CIV' in hotel_columns else 0
-            )
-        else:
-            st.error("No hotel columns found in data")
-            return
-        
-        # Target setting
-        reduction_target = st.slider("Reduction Target (%)", 5, 30, 15)
-    
     # Calculate Jan-March comparison
-    comparison = calculate_q1_comparison(df, selected_hotel)
+    comparison = calculate_q1_comparison(df)
     
-    # Display KPIs
+    # Main content - use columns for layout
     if comparison:
-        # Create KPI metrics
-        kpi_cols = st.columns(3)
+        # Calculate guest usage data (simulated)
+        avg_guests_per_night = 81  # Using the provided number of guests per night
+        total_q1_consumption = comparison['current_total']  # Total consumption in Q1
+        days_in_q1 = 90  # Approximate days in Jan-Mar
+        
+        # Calculate average consumption per guest per night
+        avg_consumption_per_guest = (total_q1_consumption / days_in_q1) / avg_guests_per_night
+        
+        # KPI row with 4 custom styled metrics
+        kpi_cols = st.columns(4)
         
         with kpi_cols[0]:
             direction = "Reduction" if comparison['percent_change'] < 0 else "Increase"
-            delta_color = "normal" if comparison['percent_change'] < 0 else "inverse"
-            st.metric(
-                label=f"Jan - March {comparison['current_year']} vs Jan - March {comparison['previous_year']}",
-                value=f"{abs(comparison['percent_change']):.1f}%",
-                delta=direction,
-                delta_color=delta_color
-            )
+            delta_class = "positive" if comparison['percent_change'] < 0 else "negative"
+            
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">Jan-Mar {comparison['current_year']} vs {comparison['previous_year']}</div>
+                <div class="metric-value">{abs(comparison['percent_change']):.1f}%</div>
+                <div class="metric-delta {delta_class}">{direction}</div>
+            </div>
+            """, unsafe_allow_html=True)
         
         with kpi_cols[1]:
-            st.metric(
-                label="Energy Saved (Jan - March)",
-                value=f"{comparison['energy_saved']:,.0f} kWh"
-            )
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">Energy Saved (Jan-Mar)</div>
+                <div class="metric-value">{comparison['energy_saved']:,.0f} kWh</div>
+                <div class="metric-delta positive">Conservation</div>
+            </div>
+            """, unsafe_allow_html=True)
         
         with kpi_cols[2]:
-            st.metric(
-                label="CO₂ Prevented (Jan - March)",
-                value=f"{comparison['co2_prevented']:,.0f} kg"
-            )
-        
-        # Progress towards target
-        if comparison['percent_change'] < 0:  # Only if there's a reduction
-            progress = min(100, abs(comparison['percent_change']) / reduction_target * 100)
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">CO₂ Prevented (Jan-Mar)</div>
+                <div class="metric-value">{comparison['co2_prevented']:,.0f} kg</div>
+                <div class="metric-delta positive">Emissions Reduction</div>
+            </div>
+            """, unsafe_allow_html=True)
             
-            st.subheader("Progress Toward Reduction Target")
-            
-            # Add progress bar
-            st.progress(progress / 100)
-            
-            # Add caption
-            st.caption(f"{progress:.1f}% of the {reduction_target}% reduction target achieved")
+        with kpi_cols[3]:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">👤 GUEST USAGE</div>
+                <div class="metric-value">{avg_consumption_per_guest:.1f} kWh</div>
+                <div class="metric-delta positive">Per Guest Per Night</div>
+            </div>
+            """, unsafe_allow_html=True)
     
-    # Champion Section
+    # Champion Section with Comfort Inn styling
     st.markdown("""
     <div class="champion-container">
-        <img src="https://ui-avatars.com/api/?name=Emma&background=10B981&color=fff&size=100" class="champion-photo">
+        <img src="https://ui-avatars.com/api/?name=Sufyan&background=F37021&color=fff&size=60" class="champion-photo">
         <div class="champion-info">
             <h3>Sufyan, Green Champion</h3>
             <p>"We've made great progress in Jan - March! Let's keep up the momentum! Remember to turn off lights when leaving a room and report any issues with equipment immediately."</p>
@@ -394,73 +546,68 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Charts section
-    chart_cols = st.columns(2)
-    
-    # Quick Energy-Saving Reminders (replacing Energy-Saving Tips)
-    with chart_cols[0]:
-        st.subheader("Quick Energy-Saving Reminders")
-        
-        tips_cols = st.columns(1)
-        
-        tips = [
-            "💡 Turn off lights in unoccupied areas",
-            "🚿 Report leaking taps immediately",
-            "🌡️ Keep thermostat at 21-23°C",
-            "☀️ Use natural light when possible",
-            "🔌 Unplug equipment when not in use",
-            "🚶‍♂️ Use stairs for trips under 3 floors"
-            # "💻 Enable power-saving on devices",
-            # "❄️ Close refrigerator doors completely"
-        ]
-        
-        for tip in tips:
-            st.info(tip)
+    # Two column layout for chart and feedback
+    col1, col2 = st.columns(2)
     
     # Jan-March comparison chart
-    with chart_cols[1]:
-        st.subheader("Jan - March Comparison")
-        q1_chart = create_q1_chart(df, comparison, selected_hotel)
+    with col1:
+        st.markdown("<h3>Jan - March Comparison</h3>", unsafe_allow_html=True)
+        q1_chart = create_q1_chart(df, comparison)
         if q1_chart:
-            st.plotly_chart(q1_chart, use_container_width=True)
+            # Update chart height to make it more compact
+            q1_chart.update_layout(height=300, margin=dict(l=40, r=10, t=30, b=40))
+            st.plotly_chart(q1_chart, use_container_width=True, config={'displayModeBar': False})
     
     # Add Sli.do interactive widget section
-    st.subheader("Earth Day Feedback & Ideas")
+    with col2:
+        st.markdown("""
+        <h3>Earth Day Feedback & Ideas
+            <a href="https://app.sli.do/event/kp3r3zjEt3G7YDGHUZzdKQ" target="_blank" style="font-size: 0.75rem; color: #F37021; margin-left: 10px; text-decoration: none;">
+                📱 Click to open Slido on your device
+            </a>
+        </h3>
+        """, unsafe_allow_html=True)
+        
+        # Embed Sli.do using components.html with reduced height
+        components.html(
+            """
+            <div style="width: 100%; height: 100%;">
+                <iframe src="https://wall.sli.do/event/tZFDbXyMj6JiEmMk6TxC7t/?section=113b6cbd-d08f-438e-9050-cac73fb050fb" 
+                        frameborder="0" 
+                        style="width: 100%; height: 300px;" 
+                        allow="camera; microphone; fullscreen; display-capture; autoplay">
+                </iframe>
+            </div>
+            """,
+            height=300,
+        )
     
-    # Embed Sli.do using components.html
-    components.html(
-        """
-        <div style="width: 100%; height: 100%;">
-            <iframe src="https://wall.sli.do/event/tZFDbXyMj6JiEmMk6TxC7t/?section=113b6cbd-d08f-438e-9050-cac73fb050fb" 
-                    frameborder="0" 
-                    style="width: 100%; height: 500px;" 
-                    allow="camera; microphone; fullscreen; display-capture; autoplay">
-            </iframe>
-        </div>
-        """,
-        height=520,
-    )
+    # Energy saving reminders as a banner at the bottom
+    st.markdown("<h3>Quick Energy-Saving Reminders</h3>", unsafe_allow_html=True)
     
-    # # Earth Day Information Section
-    # st.subheader("Earth Day at CIV")
+    reminders = [
+        "💡 Turn off lights in unoccupied areas",
+        "🚿 Report leaking taps immediately",
+        "🌡️ Keep thermostat at 21-23°C",
+        "☀️ Use natural light when possible",
+        "🔌 Unplug equipment when not in use",
+        "🚶‍♂️ Use stairs for trips under 3 floors"
+    ]
     
-    # st.markdown("""
-    # <div style="background-color: #f0fdf4; padding: 1.5rem; border-radius: 0.75rem; border-left: 4px solid #22c55e;">
-    #     <h3 style="margin-top: 0; color: #166534;">Join Us for Earth Day 2025!</h3>
-    #     <p>CIV is proud to celebrate Earth Day with a series of sustainability initiatives:</p>
-    #     <ul>
-    #         <li>Tree planting ceremony in the hotel garden at 10:00</li>
-    #         <li>Sustainability workshop in the conference room at 14:00</li>
-    #         <li>Energy-saving competition between departments</li>
-    #         <li>Locally-sourced special menu in the restaurant</li>
-    #     </ul>
-    #     <p style="margin-bottom: 0;">Together, we can make a difference for our planet!</p>
-    # </div>
-    # """, unsafe_allow_html=True)
+    # Create a horizontal banner with all reminders
+    reminder_html = '<div class="energy-savings-banner">'
+    for reminder in reminders:
+        reminder_html += f'<div class="energy-reminder"><p>{reminder}</p></div>'
+    reminder_html += '</div>'
     
-    # Footer
-    st.markdown("---")
-    st.caption("Hotel Power Up Initiative | Last Updated: March 31, 2025")
+    st.markdown(reminder_html, unsafe_allow_html=True)
+    
+    # Footer with Comfort Inn branding
+    st.markdown("""
+    <div class="footer">
+        <p>Comfort Inn Victoria - Earth Day Power Up Initiative | Last Updated: March 31, 2025</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
