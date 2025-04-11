@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -166,9 +164,6 @@ def get_matching_day_pairs(data, current_start, current_end, compare_start, comp
     """
     Extracts only day pairs that exist in both current and comparison periods,
     matching by day-of-week and week-of-month to ensure valid comparisons.
-    
-    Note: This function only compares days that exist in both periods with the
-    same day-of-week, week-of-month, and month position to ensure a fair comparison.
     """
     # Filter basic date ranges
     current_data = data[(data['Date'] >= current_start) & (data['Date'] <= current_end)].copy()
@@ -214,8 +209,6 @@ def get_matching_day_pairs(data, current_start, current_end, compare_start, comp
     }
 
 # Get KPIs using matched day pairs
-# In your get_matched_kpis function (around line 427), add debug logging:
-
 def get_matched_kpis(data, current_start, current_end, compare_start, compare_end):
     # Get matched day pairs
     matched_data = get_matching_day_pairs(data, current_start, current_end, compare_start, compare_end)
@@ -227,17 +220,11 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     current_total = current_data['Total Usage'].sum()
     compare_total = compare_data['Total Usage'].sum()
     
-    # Add this debug print statement
-    print(f"DEBUG: current_total={current_total}, compare_total={compare_total}")
-    
     # Handle edge case where compare_total is 0
     if compare_total == 0:
         percent_change = 0
     else:
         percent_change = ((current_total - compare_total) / compare_total) * 100
-    
-    # Add this debug print statement
-    print(f"DEBUG: percent_change={percent_change}")
     
     # Calculate daily averages
     current_daily_avg = current_data['Total Usage'].mean()
@@ -246,30 +233,21 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     # Calculate CO2 impact
     co2_saved = (compare_total - current_total) * ELECTRICITY_FACTOR
     
-    # This is likely the issue! Fix the calculations:
+    # Calculate kWh saved
     kwh_saved = compare_total - current_total
     
-    # Add these debug print statements
-    print(f"DEBUG: co2_saved (raw)={co2_saved}")
-    print(f"DEBUG: kwh_saved (raw)={kwh_saved}")
-    
-    # Calculate per-guest usage (with average of 235 guests per night)
+    # Calculate per-guest usage (with average of 202 guests per night)
     avg_guests = 202
     guest_usage = current_total / (len(current_data) * avg_guests)
     
     # Add context to CO2 saved - trees equivalent
     # Average tree absorbs about 22 kg of CO2 per year
-    # Source: UK Forestry Commission approximate figures
     trees_equivalent = int(co2_saved / 22)
     
     # Calculate progress toward 10% savings goal
     target_savings_percent = 10
     target_usage = compare_total * (1 - target_savings_percent/100)
     progress_percentage = min(100, max(0, ((compare_total - current_total) / (compare_total - target_usage)) * 100))
-    
-    # Debug the progress calculation
-    print(f"DEBUG: target_usage={target_usage}")
-    print(f"DEBUG: progress_percentage={progress_percentage}")
     
     # Make sure kwh_saved and co2_saved are properly calculated
     # If current_total is higher than compare_total, then there are no savings
@@ -282,9 +260,6 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         kwh_saved = compare_total - current_total
         co2_saved = kwh_saved * ELECTRICITY_FACTOR
     
-    # Debug final values
-    print(f"DEBUG: final kwh_saved={kwh_saved}, co2_saved={co2_saved}, progress_percentage={progress_percentage}")
-    
     remaining_kwh = max(0, current_total - target_usage)
     
     # Include match quality metrics
@@ -294,8 +269,8 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         'percent_change': percent_change,
         'current_daily_avg': current_daily_avg,
         'compare_daily_avg': compare_daily_avg,
-        'co2_saved': co2_saved,  # No max(0, ...) as we handle it above
-        'kwh_saved': kwh_saved,  # No max(0, ...) as we handle it above 
+        'co2_saved': co2_saved,
+        'kwh_saved': kwh_saved,
         'matched_day_count': matched_data['matched_day_count'],
         'expected_day_count': matched_data['expected_day_count'],
         'match_percentage': matched_data['match_percentage'],
@@ -305,6 +280,7 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         'target_savings_percent': target_savings_percent,
         'trees_equivalent': trees_equivalent
     }
+
 # Get compare dates from previous year
 def get_comparative_period(current_start, current_end):
     # Get same period from last year
@@ -344,13 +320,14 @@ def get_hourly_chart(data, current_start, current_end):
         # Find top 5 peak half-hour periods
         top_periods = hh_df.nlargest(5, 'usage')
         
-        # Create half-hourly chart with Westin colors
+        # Create half-hourly chart with Westin colors - using Granite to Basil gradient
         hour_fig = px.bar(
             hh_df,
             x='time_slot',
             y='usage',
             color='usage',
-            color_continuous_scale=[[0, "#e9f3fc"], [0.5, "#8abed3"], [1, "#006c93"]],  # Westin blue gradient
+            # Updated to Westin color palette - Granite to Basil gradient
+            color_continuous_scale=[[0, "#51555A"], [0.5, "#6aad90"], [1, "#294237"]],
             labels={'usage': 'Energy (kWh)', 'time_slot': 'Time of Day'}
         )
         
@@ -359,7 +336,7 @@ def get_hourly_chart(data, current_start, current_end):
         
         hour_fig.update_layout(
             coloraxis_showscale=False,
-            height=240,  # Adjusted height
+            height=240,
             margin=dict(l=5, r=5, t=5, b=20),
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
@@ -367,18 +344,19 @@ def get_hourly_chart(data, current_start, current_end):
                 tickmode='array',
                 tickvals=show_labels,
                 ticktext=show_labels,
-                title=None,  # Remove axis title
-                gridcolor='#e9f3fc',
-                tickfont=dict(size=9)
+                title=None,
+                gridcolor='#E9E9E9',
+                tickfont=dict(size=9, family="Arial, sans-serif")
             ),
             yaxis=dict(
-                title=None,  # Remove axis title
-                gridcolor='#e9f3fc',
-                tickfont=dict(size=9)
+                title=None,
+                gridcolor='#E9E9E9',
+                tickfont=dict(size=9, family="Arial, sans-serif")
             ),
             hoverlabel=dict(
                 bgcolor="white",
-                font_size=10
+                font_size=10,
+                font_family="Arial, sans-serif"
             )
         )
         
@@ -414,31 +392,33 @@ def get_hourly_chart(data, current_start, current_end):
             x='day_name',
             y='Total Usage',
             color='Total Usage',
-            color_continuous_scale=[[0, "#e9f3fc"], [0.5, "#8abed3"], [1, "#006c93"]],  # Westin blue gradient
+            # Updated to Westin color palette - Granite to Basil gradient
+            color_continuous_scale=[[0, "#51555A"], [0.5, "#81858C"], [1, "#294237"]],
             labels={'Total Usage': 'Energy (kWh)', 'day_name': 'Day of Week'}
         )
         
         dow_fig.update_layout(
             coloraxis_showscale=False,
-            height=240,  # Adjusted height
+            height=240,
             margin=dict(l=5, r=5, t=5, b=20),
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             xaxis=dict(
-                title=None,  # Remove axis title
-                gridcolor='#e9f3fc',
+                title=None,
+                gridcolor='#E9E9E9',
                 categoryorder='array',
                 categoryarray=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                tickfont=dict(size=9)
+                tickfont=dict(size=9, family="Arial, sans-serif")
             ),
             yaxis=dict(
-                title=None,  # Remove axis title
-                gridcolor='#e9f3fc',
-                tickfont=dict(size=9)
+                title=None,
+                gridcolor='#E9E9E9',
+                tickfont=dict(size=9, family="Arial, sans-serif")
             ),
             hoverlabel=dict(
                 bgcolor="white",
-                font_size=10
+                font_size=10,
+                font_family="Arial, sans-serif"
             )
         )
         
@@ -458,7 +438,7 @@ def main():
     <style>
         /* Main header styling */
         .header-container {
-            background-color: #006c93;  /* Westin primary blue */
+            background-color: #51555A;  /* Westin Granite */
             padding: 0.5rem;
             border-radius: 0.4rem;
             color: white;
@@ -469,6 +449,7 @@ def main():
             justify-content: space-between;
             align-items: center;
         }
+        
         /* Westin logo style in header */
         .westin-header-logo {
             height: 40px;
@@ -485,11 +466,12 @@ def main():
             flex-grow: 1;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
             letter-spacing: 0.5px;
-            background-color: #006c93;
-            font-family: 'Georgia', serif;  /* Westin uses a serif font */
+            background-color: #51555A; /* Westin Granite */
+            font-family: 'Arial', sans-serif;
             display: flex;
             align-items: center;
         }
+        
         .period-selector {
             width: 180px;
             margin-right: 0.5rem;
@@ -501,9 +483,11 @@ def main():
             padding-bottom: 0.2rem !important;
             max-width: 100% !important;
         }
+        
         div.stApp > header {
             display: none;
         }
+        
         .main > div {
             padding-left: 1rem;
             padding-right: 1rem;
@@ -513,9 +497,9 @@ def main():
         .card {
             background-color: white;
             border-radius: 0.4rem;
-            padding: 0.6rem 0.8rem; /* Increase horizontal padding */
+            padding: 0.6rem 0.8rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #e9f3fc;
+            border: 1px solid #E9E9E9; /* Lighter Granite */
             height: 110px !important;
             display: flex;
             flex-direction: column;
@@ -526,14 +510,14 @@ def main():
         
         /* Fix truncation issues with labels */
         .metric-label {
-            font-size: 0.9rem; /* Slightly larger */
-            color: #006c93;
+            font-size: 0.9rem;
+            color: #51555A; /* Westin Granite */
             margin-bottom: 0.3rem;
-            font-family: 'Georgia', serif;
-            white-space: normal !important; /* Allow wrapping */
-            overflow: visible !important; /* Show overflow */
-            text-overflow: clip !important; /* Don't use ellipsis */
-            display: block !important; /* Remove webkit line clamp */
+            font-family: 'Arial', sans-serif;
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            display: block !important;
             -webkit-line-clamp: unset !important;
             -webkit-box-orient: unset !important;
             line-height: 1.2;
@@ -544,12 +528,12 @@ def main():
         .metric-value {
             font-size: 1.3rem;
             font-weight: 700;
-            color: #3b3b3b;
+            color: #294237; /* Westin Basil */
             margin: 0.2rem 0;
-            font-family: 'Georgia', serif;
-            white-space: normal !important; /* Allow wrapping */
-            overflow: visible !important; /* Show overflow */
-            text-overflow: clip !important; /* Don't use ellipsis */
+            font-family: 'Arial', sans-serif;
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
             line-height: 1.2;
             max-height: none !important;
         }
@@ -557,21 +541,23 @@ def main():
         /* Fix truncation issues with delta indicators */
         .metric-delta {
             font-size: 0.8rem;
-            color: #007a3e;
+            color: #007a3e; /* Darker green */
             font-weight: 600;
             padding: 0.2rem 0.4rem;
-            background-color: #e9f7ef;
+            background-color: #e9f7ef; /* Light mint */
             border-radius: 0.25rem;
-            display: block !important; /* Make it block to take full width */
-            overflow: visible !important; /* Show overflow */
-            text-overflow: clip !important; /* Don't use ellipsis */
-            white-space: normal !important; /* Allow wrapping */
+            display: block !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            white-space: normal !important;
             max-width: 100%;
             line-height: 1.2;
             max-height: none !important;
+            font-family: 'Arial', sans-serif;
         }
+        
         .metric-delta.negative {
-            color: #c25450;  /* Westin accent red for negative change */
+            color: #B4786C; /* Westin Terracotta */
             background-color: #fdf2f0;
         }
         
@@ -579,26 +565,27 @@ def main():
         .progress-container {
             width: 100%;
             height: 10px;
-            background-color: #e9f3fc;
+            background-color: #E9E9E9; /* Light Granite */
             border-radius: 5px;
             margin-top: 0.2rem;
         }
+        
         .progress-bar {
             height: 100%;
             border-radius: 5px;
-            background-color: #006c93;
+            background-color: #294237; /* Westin Basil */
         }
         
         /* Make champion container match metric card height */
         .champion-container {
-            background-color: #e9f3fc;  /* Light Westin blue */
+            background-color: #f2f7f6;  /* Light Basil */
             border-radius: 0.4rem;
             padding: 0.6rem;
             display: flex;
             align-items: center;
             gap: 0.6rem;
-            height: 110px !important; /* Match card height */
-            border: 1px solid #8abed3;  /* Medium Westin blue */
+            height: 110px !important;
+            border: 1px solid #294237;  /* Westin Basil border */
             margin-bottom: 0.6rem;
             overflow: hidden;
         }
@@ -608,8 +595,8 @@ def main():
             height: 50px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #006c93;  /* Westin blue */
-            flex-shrink: 0; /* Prevent shrinking */
+            border: 2px solid #294237;  /* Westin Basil */
+            flex-shrink: 0;
         }
         
         .champion-info {
@@ -621,8 +608,8 @@ def main():
             font-size: 0.85rem;
             margin-top: 0;
             margin-bottom: 0.2rem;
-            color: #006c93;  /* Westin blue */
-            font-family: 'Georgia', serif;
+            color: #294237;  /* Westin Basil */
+            font-family: 'Arial', sans-serif;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -632,14 +619,14 @@ def main():
             font-size: 0.75rem;
             margin: 0;
             line-height: 1.2;
-            color: #3b3b3b;  /* Westin dark gray */
-            font-family: 'Georgia', serif;
+            color: #51555A;  /* Westin Granite */
+            font-family: 'Arial', sans-serif;
             overflow: hidden;
             text-overflow: ellipsis;
             display: -webkit-box;
-            -webkit-line-clamp: 3; /* Limit to 3 lines */
+            -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
-            max-height: 2.7em; /* Approximately 3 lines */
+            max-height: 2.7em;
         }
         
         /* Chart title styling */
@@ -647,16 +634,17 @@ def main():
             font-size: 0.85rem;
             margin-top: 0;
             margin-bottom: 0.3rem;
-            color: #006c93;  /* Westin blue */
+            color: #51555A;  /* Westin Granite */
             font-weight: 600;
-            font-family: 'Georgia', serif;
+            font-family: 'Arial', sans-serif;
         }
+        
         .chart-subtitle {
             font-size: 0.7rem;
             margin: 0;
-            color: #3b3b3b;  /* Westin dark gray */
+            color: #51555A;  /* Westin Granite */
             text-align: center;
-            font-family: 'Georgia', serif;
+            font-family: 'Arial', sans-serif;
         }
         
         /* Chart container with margin */
@@ -668,25 +656,27 @@ def main():
         .tips-section {
             height: auto;
             min-height: 110px;
-            background-color: #f2f7fb;  /* Very light Westin blue */
+            background-color: #f2f7f6;  /* Very light Basil */
             padding: 0.6rem;
             border-radius: 0.4rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #8abed3;  /* Medium Westin blue */
+            border: 1px solid #294237;  /* Westin Basil */
             display: flex;
             flex-direction: column;
             margin-bottom: 0.8rem;
             max-height: 200px;
             overflow-y: auto;
         }
+        
         .tips-section h3 {
             font-size: 0.85rem;
             margin-top: 0;
             margin-bottom: 0.3rem;
-            color: #006c93;  /* Westin blue */
+            color: #294237;  /* Westin Basil */
             font-weight: 600;
-            font-family: 'Georgia', serif;
+            font-family: 'Arial', sans-serif;
         }
+        
         .tips-container {
             display: flex;
             flex-wrap: wrap;
@@ -694,17 +684,18 @@ def main():
             margin-top: 0.2rem;
             overflow: visible;
         }
-.tip-chip {
+        
+        .tip-chip {
             background-color: white;
             padding: 0.2rem 0.4rem;
             border-radius: 9999px;
             font-size: 0.7rem;
             white-space: nowrap;
-            border: 1px solid #e9f3fc;  /* Light Westin blue */
-            color: #006c93;  /* Westin blue for text visibility */
-            font-family: 'Georgia', serif;
+            border: 1px solid #51555A;  /* Westin Granite */
+            color: #294237;  /* Westin Basil for text */
+            font-family: 'Arial', sans-serif;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            font-weight: 600; /* Make more visible */
+            font-weight: 600;
         }
         
         /* Feedback container with margin */
@@ -717,19 +708,19 @@ def main():
             font-size: 0.85rem;
             margin-top: 0;
             margin-bottom: 0.3rem;
-            color: #006c93;  /* Westin blue */
+            color: #294237;  /* Westin Basil */
             font-weight: 600;
-            font-family: 'Georgia', serif;
+            font-family: 'Arial', sans-serif;
         }
         
         /* Footer */
         .footer {
             text-align: center;
-            color: #006c93;  /* Changed to Westin blue for better visibility */
+            color: #51555A;  /* Westin Granite */
             font-size: 0.65rem;
             margin-top: 0.5rem;
             margin-bottom: 0.5rem;
-            font-family: 'Georgia', serif;
+            font-family: 'Arial', sans-serif;
         }
         
         /* Fix for plot background */
@@ -746,37 +737,41 @@ def main():
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         
-        /* Responsive adjustments */
+/* Responsive adjustments */
         @media (max-width: 992px) {
             .header-title {
                 font-size: 1.2rem;
             }
+            
             .westin-header-logo {
                 height: 30px;
             }
             
             /* Adjusted card height for mobile */
+            .card {
+                height: 100px !important;
+            }
 
             .champion-container {
                 height: 100px !important; /* Match card height on mobile */
             }
             
             .card {
-                background-color: #1e2a38;
-                border-color: #006c93;
+                background-color: #FFFFFF;
+                border-color: #51555A;
             }
             
             .metric-label {
-                color: #8abed3;
+                color: #51555A;
             }
             
             .metric-value {
-                color: #ffffff;
+                color: #294237;
             }
             
             .metric-delta {
                 background-color: rgba(233, 247, 239, 0.1);
-                color: #4caf50;
+                color: #294237;
             }
                 
             .champion-info p {
@@ -789,6 +784,7 @@ def main():
                 display: flex;
                 flex-direction: column;
             }
+            
             .mobile-stack > div {
                 width: 100% !important;
                 margin-bottom: 0.8rem;
@@ -824,7 +820,7 @@ def main():
         @media (prefers-color-scheme: dark) {
             .card {
                 background-color: #1e2a38;
-                border-color: #006c93;
+                border-color: #294237;
             }
             
             .metric-value {
@@ -845,8 +841,8 @@ def main():
             
             .tip-chip {
                 background-color: #2c3e50;
-                color: #8abed3; /* Lighter blue for dark mode */
-                border-color: #006c93;
+                color: #a7bdb3;
+                border-color: #294237;
             }
             
             .chart-subtitle {
@@ -878,7 +874,7 @@ def main():
             right: 5px;
             width: 30px;
             height: 30px;
-            background-color: #e9f3fc;
+            background-color: #f2f7f6;
             border-radius: 50%;
             opacity: 0.5;
         }
@@ -886,17 +882,17 @@ def main():
         /* Wellness message styling */
         .wellness-message {
             font-style: italic;
-            color: #006c93;
+            color: #51555A;
             font-size: 0.7rem;
             text-align: center;
             margin-top: 0.4rem;
             margin-bottom: 0.4rem;
-            font-family: 'Georgia', serif;
+            font-family: 'Arial', sans-serif;
         }
     </style>
     """, unsafe_allow_html=True)
 
-# Add responsive JavaScript for detecting mobile devices and fitting text
+    # Add responsive JavaScript for detecting mobile devices and fitting text
     st.markdown("""
     <script>
         // Add mobile class to body if screen width is less than 768px
@@ -978,7 +974,7 @@ def main():
             
             // Ensure tip chips are visible
             document.querySelectorAll('.tip-chip').forEach(chip => {
-                chip.style.color = '#006c93';
+                chip.style.color = '#294237'; // Changed to Westin Basil
                 chip.style.fontWeight = '600';
             });
         }
@@ -1002,7 +998,8 @@ def main():
         }
     </script>
     """, unsafe_allow_html=True)
-# Load data
+
+    # Load data
     data = load_data()
     
     if len(data) == 0:
@@ -1029,23 +1026,34 @@ def main():
         import base64
         from pathlib import Path
         
-        # Load and encode the image
-        img_path = "logos/westin_logo.png"
-        with open(img_path, "rb") as f:
-            img_data = base64.b64encode(f.read()).decode()
-        
-        # Create HTML with precise positioning
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 0;">
-            <img src="data:image/png;base64,{img_data}" 
-                style="height: 55px; display: inline-block; margin: 10px; padding: 0;"
-                alt="Westin">
-            <span style="color: #002d72; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
-                        display: inline-block; margin: 0; padding-left: 0;">
-                CELEBRATES EARTH DAY 2025
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
+        try:
+            # Load and encode the image
+            img_path = "logos/westin_logo.png"
+            with open(img_path, "rb") as f:
+                img_data = base64.b64encode(f.read()).decode()
+            
+            # Create HTML with precise positioning and embedded image
+            st.markdown(f"""
+            <div style="display: flex; align-items: center; gap: 0;">
+                <img src="data:image/png;base64,{img_data}" 
+                    style="height: 55px; display: inline-block; margin: 10px; padding: 0;"
+                    alt="Westin">
+                <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
+                            display: inline-block; margin: 0; padding-left: 0;">
+                    LONDON CITY CELEBRATES EARTH DAY 2025
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+        except Exception as e:
+            # Fallback if image loading fails
+            st.markdown("""
+            <div style="display: flex; align-items: center; gap: 0;">
+                <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
+                            display: inline-block; margin: 10px; padding: 0;">
+                    THE WESTIN LONDON CITY CELEBRATES EARTH DAY 2025
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
 
     with header_col2:
         # Period selector
@@ -1060,6 +1068,7 @@ def main():
             index=0,
             label_visibility="collapsed"
         )
+        
     # Set date ranges based on selection
     if period == "Last 7 Days":
         current_end = today
@@ -1092,7 +1101,8 @@ def main():
     
     # Check if on mobile for layout
     is_mobile = st.session_state.get('is_mobile', False)
-# Row 1: KPIs and Champion - responsive layout
+
+    # Row 1: KPIs and Champion - responsive layout
     if is_mobile:
         # Mobile layout - stack cards
         row1_cols = st.columns([1])
@@ -1152,7 +1162,7 @@ def main():
             # Green Champion with Westin styling
             st.markdown("""
             <div class="champion-container">
-                <img src="https://ui-avatars.com/api/?name=JG&background=006c93&color=fff&size=50" class="champion-photo">
+                <img src="https://ui-avatars.com/api/?name=JG&background=294237&color=fff&size=50" class="champion-photo">
                 <div class="champion-info">
                     <h3>Jekaterina and Gayatri - Green Champions</h3>
                     <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalized energy-saving tips."</p>
@@ -1200,11 +1210,9 @@ def main():
             
         with row1_cols[3]:
             # Progress to Goal - simplified with clearer progress indicators
-            # Change this in the desktop layout section (around line 760)
             current_percentage = abs(kpis['percent_change']) if kpis['percent_change'] < 0 else 0.0
             target_percentage = kpis['target_savings_percent']
             progress_towards_target = kpis['progress_percentage']  # Use the correct value from KPIs
-
             
             # Percentage remaining to target
             percentage_remaining = max(0, target_percentage - current_percentage)
@@ -1224,7 +1232,7 @@ def main():
             # Green Champion with Westin styling
             st.markdown("""
             <div class="champion-container">
-                <img src="https://ui-avatars.com/api/?name=JG&background=006c93&color=fff&size=50" class="champion-photo">
+                <img src="https://ui-avatars.com/api/?name=JG&background=294237&color=fff&size=50" class="champion-photo">
                 <div class="champion-info">
                     <h3>Jekaterina and Gayatri - Green Champions</h3>
                     <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalized energy-saving tips."</p>
@@ -1264,7 +1272,7 @@ def main():
         
         # Embed Sli.do with adjusted height and clickable link
         st.markdown("""
-        <a href="https://app.sli.do/event/raPH3EvtzJPnVW84kh7svV" target="_blank" style="font-size: 0.75rem; color: #006c93; margin-bottom: 5px; display: block;">
+        <a href="https://app.sli.do/event/raPH3EvtzJPnVW84kh7svV" target="_blank" style="font-size: 0.75rem; color: #294237; margin-bottom: 5px; display: block;">
             📱 Click here to open Slido on your device
         </a>
         """, unsafe_allow_html=True)
@@ -1316,7 +1324,7 @@ def main():
             
             # Embed Sli.do with adjusted height and clickable link
             st.markdown("""
-            <a href="https://app.sli.do/event/raPH3EvtzJPnVW84kh7svV" target="_blank" style="font-size: 0.75rem; color: #006c93; margin-bottom: 5px; display: block;">
+            <a href="https://app.sli.do/event/raPH3EvtzJPnVW84kh7svV" target="_blank" style="font-size: 0.75rem; color: #294237; margin-bottom: 5px; display: block;">
                 📱 Click here to open Slido on your device
             </a>
             """, unsafe_allow_html=True)
@@ -1332,7 +1340,8 @@ def main():
                 height=250,
             )
             st.markdown('</div>', unsafe_allow_html=True)
-# Row 3: Tips section in full width - ensure it's scrollable on small screens
+            
+    # Row 3: Tips section in full width - ensure it's scrollable on small screens
     st.markdown("""
     <div class="tips-section">
         <h3>Wellness & Sustainability Tips</h3>
@@ -1369,7 +1378,7 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-# Set session state based on screen width at start
+    # Set session state based on screen width at start
     if 'is_mobile' not in st.session_state:
         # Default to desktop view initially
         st.session_state['is_mobile'] = False
@@ -1381,35 +1390,35 @@ def main():
         function ensureTipChipsVisible() {
             document.querySelectorAll('.tip-chip').forEach(chip => {
                 // Force color and font weight to ensure visibility
-                chip.style.color = '#006c93';
+                chip.style.color = '#294237'; // Westin Basil
                 chip.style.fontWeight = '600';
                 
                 // Add hover effect
                 chip.addEventListener('mouseover', function() {
-                    this.style.backgroundColor = '#e9f3fc';
-                    this.style.color = '#00557a';
+                    this.style.backgroundColor = '#f2f7f6'; // Light Basil
+                    this.style.color = '#294237'; // Darker Basil
                 });
                 
                 chip.addEventListener('mouseout', function() {
                     this.style.backgroundColor = 'white';
-                    this.style.color = '#006c93';
+                    this.style.color = '#294237'; // Westin Basil
                 });
                 
                 // Handle dark mode
                 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                     chip.style.backgroundColor = '#2c3e50';
-                    chip.style.color = '#8abed3';
-                    chip.style.borderColor = '#006c93';
+                    chip.style.color = '#a7bdb3'; // Light Basil
+                    chip.style.borderColor = '#294237'; // Westin Basil
                     
                     // Dark mode hover effect
                     chip.addEventListener('mouseover', function() {
                         this.style.backgroundColor = '#37516e';
-                        this.style.color = '#b8d7e6';
+                        this.style.color = '#a7bdb3'; // Light Basil
                     });
                     
                     chip.addEventListener('mouseout', function() {
                         this.style.backgroundColor = '#2c3e50';
-                        this.style.color = '#8abed3';
+                        this.style.color = '#a7bdb3'; // Light Basil
                     });
                 }
             });
