@@ -835,6 +835,16 @@ def main():
             .metric-value {
                 color: #f0f0f0;
             }
+        
+            .metric-delta {
+            color: white !important; /* Force white text */
+            background-color: rgba(41, 66, 55, 0.3); /* Keep the semi-transparent background */
+        }
+        
+            .metric-delta.negative {
+            color: white !important; /* Force white text for negative values too */
+            background-color: rgba(180, 120, 108, 0.2); /* Keep the semi-transparent background */
+        }
             
             .champion-container {
                 background-color: #1e2a38;
