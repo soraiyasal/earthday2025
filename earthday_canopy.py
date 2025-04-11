@@ -454,7 +454,20 @@ st.markdown("""
     
     /* Fix for Streamlit components */
     .stSelectbox > div > div {
-        background-color: white;
+        background-color: #1e2a38 !important; /* Dark background */
+        color: #f0f0f0 !important; /* Light text */
+        border-color: #294237 !important; /* Westin Basil border */
+    }
+    
+    /* Style for dropdown options in dark mode */
+    .stSelectbox ul {
+        background-color: #1e2a38 !important;
+        color: #f0f0f0 !important;
+    }
+    
+    /* Dropdown arrow color in dark mode */
+    .stSelectbox svg {
+        color: #f0f0f0 !important;
     }
     
     /* Canopy logo style */
