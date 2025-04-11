@@ -1040,7 +1040,7 @@ def main():
                     alt="Westin">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
                             display: inline-block; margin: 0; padding-left: 0;">
-                    LONDON CITY CELEBRATES EARTH DAY 2025
+                    CELEBRATES EARTH DAY 2025
                 </span>
             </div>
             """, unsafe_allow_html=True)
