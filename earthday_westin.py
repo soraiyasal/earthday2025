@@ -1165,7 +1165,7 @@ def main():
                 <img src="https://ui-avatars.com/api/?name=JG&background=294237&color=fff&size=50" class="champion-photo">
                 <div class="champion-info">
                     <h3>Jekaterina and Gayatri - Green Champions</h3>
-                    <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalized energy-saving tips."</p>
+                    <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalised energy-saving tips."</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -1235,7 +1235,7 @@ def main():
                 <img src="https://ui-avatars.com/api/?name=JG&background=294237&color=fff&size=50" class="champion-photo">
                 <div class="champion-info">
                     <h3>Jekaterina and Gayatri - Green Champions</h3>
-                    <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalized energy-saving tips."</p>
+                    <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalised energy-saving tips."</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
