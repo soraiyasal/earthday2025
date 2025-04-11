@@ -1068,8 +1068,7 @@ def main():
             options=[
                 "Year to Date",
                 "Last 7 Days", 
-                "Last 30 Days", 
-                "Earth Day Challenge"
+                "Last 30 Days"
             ],
             index=0,
             label_visibility="collapsed"
@@ -1084,13 +1083,9 @@ def main():
     elif period == "Year to Date":
         current_end = today
         current_start = datetime(today.year, 1, 1)
-    elif period == "Earth Day Challenge":
-        if today > challenge_end:
-            current_start = challenge_start
-            current_end = challenge_end
-        else:
-            current_start = challenge_start - timedelta(days=365)
-            current_end = challenge_end - timedelta(days=365)
+    else:
+        current_start = challenge_start - timedelta(days=365)
+        current_end = challenge_end - timedelta(days=365)
     
     # Get comparison period (same days last year)
     compare_start, compare_end = get_comparative_period(current_start, current_end)

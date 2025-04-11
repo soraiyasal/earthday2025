@@ -621,12 +621,9 @@ def main():
             line-height: 1.2;
             color: #51555A;  /* Westin Granite */
             font-family: 'Arial', sans-serif;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            max-height: 2.7em;
+            overflow: auto !important; /* Changed from 'hidden' to 'auto' to enable scrolling */
+            max-height: 2.7em; /* Maintain height but allow scrolling */
+            padding-right: 5px; /* Add some padding for the scrollbar */
         }
         
         /* Chart title styling */
@@ -695,7 +692,7 @@ def main():
             color: #294237;  /* Westin Basil for text */
             font-family: 'Arial', sans-serif;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            font-weight: 600;
+font-weight: 600;
         }
         
         /* Feedback container with margin */
@@ -737,6 +734,16 @@ def main():
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         
+        /* Time frame selector note styling */
+        .timeframe-note {
+            font-size: 0.7rem;
+            font-style: italic;
+            color: #B4786C; /* Westin Terracotta */
+            margin-top: 2px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        
 /* Responsive adjustments */
         @media (max-width: 992px) {
             .header-title {
@@ -775,7 +782,7 @@ def main():
             }
                 
             .champion-info p {
-                -webkit-line-clamp: 2; /* Limit to 2 lines on mobile */
+                overflow: auto !important; /* Enable scrolling on mobile too */
                 max-height: 1.8em;
             }
             
@@ -814,6 +821,13 @@ def main():
             .feedback-container {
                 margin-bottom: 1rem;
             }
+            
+            /* Make timeframe-note more visible on mobile */
+            .timeframe-note {
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: #B4786C;
+            }
         }
         
         /* Dark mode support */
@@ -847,6 +861,10 @@ def main():
             
             .chart-subtitle {
                 color: #e0e0e0;
+            }
+            
+            .timeframe-note {
+                color: #f2c1b6; /* Lighter Terracotta for dark mode */
             }
         }
         
@@ -961,15 +979,11 @@ def main():
                 }
             });
             
-            // Handle champion info text
+            // Make champion info text scrollable instead of truncated
             document.querySelectorAll('.champion-info p').forEach(el => {
-                // Auto-adjust line clamp based on text length
-                const isMobile = window.innerWidth < 768;
-                if (isMobile) {
-                    el.style.webkitLineClamp = '2';
-                } else {
-                    el.style.webkitLineClamp = '3';
-                }
+                // Remove line clamp and enable scrolling
+                el.style.webkitLineClamp = 'none';
+                el.style.overflow = 'auto';
             });
             
             // Ensure tip chips are visible
@@ -1062,12 +1076,14 @@ def main():
             options=[
                 "Year to Date",
                 "Last 7 Days", 
-                "Last 30 Days", 
-                "Earth Day Challenge"
+                "Last 30 Days"
             ],
             index=0,
             label_visibility="collapsed"
         )
+        
+        # Add a note for mobile users about the time frame selector
+
         
     # Set date ranges based on selection
     if period == "Last 7 Days":
@@ -1079,13 +1095,10 @@ def main():
     elif period == "Year to Date":
         current_end = today
         current_start = datetime(today.year, 1, 1)
-    elif period == "Earth Day Challenge":
-        if today > challenge_end:
-            current_start = challenge_start
-            current_end = challenge_end
-        else:
-            current_start = challenge_start - timedelta(days=365)
-            current_end = challenge_end - timedelta(days=365)
+
+    else:
+        current_start = challenge_start - timedelta(days=365)
+        current_end = challenge_end - timedelta(days=365)
     
     # Get comparison period (same days last year)
     compare_start, compare_end = get_comparative_period(current_start, current_end)
@@ -1159,13 +1172,13 @@ def main():
             </div>
             """, unsafe_allow_html=True)
             
-            # Green Champion with Westin styling
+            # Green Champion with Westin styling - Updated text
             st.markdown("""
             <div class="champion-container">
                 <img src="https://ui-avatars.com/api/?name=JG&background=294237&color=fff&size=50" class="champion-photo">
                 <div class="champion-info">
                     <h3>Jekaterina and Gayatri - Green Champions</h3>
-                    <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalised energy-saving tips."</p>
+                    <p>"At The Westin London City, we're committed to sustainability as part of our wellness pillar. Meet us for personalised energy-saving tips."</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -1229,13 +1242,13 @@ def main():
             """, unsafe_allow_html=True)
         
         with row1_cols[4]:
-            # Green Champion with Westin styling
+            # Green Champion with Westin styling - Updated text
             st.markdown("""
             <div class="champion-container">
                 <img src="https://ui-avatars.com/api/?name=JG&background=294237&color=fff&size=50" class="champion-photo">
                 <div class="champion-info">
                     <h3>Jekaterina and Gayatri - Green Champions</h3>
-                    <p>"At The Westin London City, we're committed to sustainability as part of our wellness philosophy. Visit me for personalised energy-saving tips."</p>
+                    <p>"At The Westin London City, we're committed to sustainability as part of our wellness pillar. Meet us for personalised energy-saving tips."</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -1394,12 +1407,7 @@ def main():
                 chip.style.fontWeight = '600';
                 
                 // Add hover effect
-                chip.addEventListener('mouseover', function() {
-                    this.style.backgroundColor = '#f2f7f6'; // Light Basil
-                    this.style.color = '#294237'; // Darker Basil
-                });
-                
-                chip.addEventListener('mouseout', function() {
+chip.addEventListener('mouseout', function() {
                     this.style.backgroundColor = 'white';
                     this.style.color = '#294237'; // Westin Basil
                 });
