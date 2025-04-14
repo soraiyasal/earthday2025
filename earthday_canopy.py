@@ -1346,14 +1346,14 @@ def main():
             
             # Embed Sli.do with adjusted height and clickable link
             st.markdown("""
-            <a href="https://app.sli.do/event/raPH3EvtzJPnVW84kh7svV" target="_blank" style="font-size: 0.75rem; color: #fe5000; margin-bottom: 5px; display: block;">
+            <a href="https://app.sli.do/event/3WAHPxwukLUzmdQH8VPyY8" target="_blank" style="font-size: 0.75rem; color: #fe5000; margin-bottom: 5px; display: block;">
                 📱 Click here to open Slido on your device
             </a>
             """, unsafe_allow_html=True)
             
             components.html(
                 """
-                <iframe src="https://wall.sli.do/event/raPH3EvtzJPnVW84kh7svV/?section=a91516a6-832e-408d-9afa-ec3f5034e0b2" 
+                <iframe src="https://wall.sli.do/event/3WAHPxwukLUzmdQH8VPyY8/?section=cf35fe01-35ec-4732-a24f-01dbb4257c08" 
                         frameborder="0" 
                         style="width: 100%; height: 230px;" 
                         allow="camera; microphone; fullscreen; display-capture; autoplay">
