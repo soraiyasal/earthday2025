@@ -1295,14 +1295,14 @@ def main():
         
         # Embed Sli.do with adjusted height and clickable link
         st.markdown("""
-        <a href="https://app.sli.do/event/3WAHPxwukLUzmdQH8VPyY8" target="_blank" style="font-size: 0.75rem; color: #002d72; margin-bottom: 5px; display: block;">
+        <a href="https://www.menti.com/al4822wc5pem" target="_blank" style="font-size: 0.75rem; color: #002d72; margin-bottom: 5px; display: block;">
             📱 Click here to open Slido on your device
         </a>
         """, unsafe_allow_html=True)
         
         components.html(
             """
-            <iframe src="https://wall.sli.do/event/3WAHPxwukLUzmdQH8VPyY8/?section=cf35fe01-35ec-4732-a24f-01dbb4257c08" 
+            <iframe src="https://www.mentimeter.com/app/presentation/alobx9rmcbn91u5e7v5e7ozihaem36cq/embed" 
                     frameborder="0" 
                     style="width: 100%; height: 230px;" 
                     allow="camera; microphone; fullscreen; display-capture; autoplay">
