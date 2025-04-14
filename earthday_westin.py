@@ -1056,9 +1056,10 @@ font-weight: 600;
     # Header with period selector
     header_col1, header_col2 = st.columns([4, 1])
 
+    # Replace the existing header code in the header_col1 section with this:
+
     with header_col1:
-        # Use base64 encoding to embed the image directly in the HTML
-        # This avoids Streamlit's image component and its expandable behavior
+        # Load and encode the image
         import base64
         from pathlib import Path
         
@@ -1068,14 +1069,14 @@ font-weight: 600;
             with open(img_path, "rb") as f:
                 img_data = base64.b64encode(f.read()).decode()
             
-            # Create HTML with precise positioning and embedded image
+            # Create HTML with vertical positioning and embedded image
             st.markdown(f"""
-            <div style="display: flex; align-items: center; gap: 0;">
+            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 5px;">
                 <img src="data:image/png;base64,{img_data}" 
-                    style="height: 55px; display: inline-block; margin: 10px; padding: 0;"
+                    style="height: 65px; display: block; margin: 0 auto;"
                     alt="Westin">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
-                            display: inline-block; margin: 0; padding-left: 0;">
+                            display: block; margin: 0; padding: 0; text-align: center;">
                     CELEBRATES EARTH DAY 2025
                 </span>
             </div>
@@ -1083,9 +1084,9 @@ font-weight: 600;
         except Exception as e:
             # Fallback if image loading fails
             st.markdown("""
-            <div style="display: flex; align-items: center; gap: 0;">
+            <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
-                            display: inline-block; margin: 10px; padding: 0;">
+                            display: block; margin: 10px auto; padding: 0; text-align: center;">
                     THE WESTIN LONDON CITY CELEBRATES EARTH DAY 2025
                 </span>
             </div>
