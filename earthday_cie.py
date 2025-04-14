@@ -562,7 +562,7 @@ def main():
     with col2:
         st.markdown("""
         <h3>Earth Day Feedback & Ideas
-            <a href="https://app.sli.do/event/kp3r3zjEt3G7YDGHUZzdKQ" target="_blank" style="font-size: 0.75rem; color: #F37021; margin-left: 10px; text-decoration: none;">
+            <a href="https://app.sli.do/event/bJ5eHKnzF6ZRRa63xcUUXR" target="_blank" style="font-size: 0.75rem; color: #F37021; margin-left: 10px; text-decoration: none;">
                 📱 Click to open Slido on your device
             </a>
         </h3>
@@ -572,7 +572,7 @@ def main():
         components.html(
             """
             <div style="width: 100%; height: 100%;">
-                <iframe src="https://wall.sli.do/event/tZFDbXyMj6JiEmMk6TxC7t/?section=113b6cbd-d08f-438e-9050-cac73fb050fb" 
+                <iframe src="https://wall.sli.do/event/bJ5eHKnzF6ZRRa63xcUUXR/?section=e90645a2-3985-428f-9169-05afcbededeb" 
                         frameborder="0" 
                         style="width: 100%; height: 300px;" 
                         allow="camera; microphone; fullscreen; display-capture; autoplay">
