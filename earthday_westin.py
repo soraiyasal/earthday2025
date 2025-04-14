@@ -1079,7 +1079,7 @@ font-weight: 600;
                     alt="Westin">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
                             display: block; margin-left: 0; padding: 0; text-align: left; align-self: flex-start;">
-                    CELEBRATES EARTH DAY 2025
+                    Celebrates Earth Day 2025
                 </span>
             </div>
             """, unsafe_allow_html=True)
@@ -1089,7 +1089,7 @@ font-weight: 600;
             <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; margin-left: 0;">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
                             display: block; margin-left: 0; padding: 0; text-align: left; align-self: flex-start;">
-                    THE WESTIN LONDON CITY CELEBRATES EARTH DAY 2025
+                    THE WESTIN LONDON CITY Celebrates Earth Day 2025
                 </span>
             </div>
             """, unsafe_allow_html=True)
@@ -1099,7 +1099,7 @@ font-weight: 600;
             <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
                             display: block; margin: 10px auto; padding: 0; text-align: center;">
-                    THE WESTIN LONDON CITY CELEBRATES EARTH DAY 2025
+                    THE WESTIN LONDON CITY Celebrates Earth Day 2025
                 </span>
             </div>
             """, unsafe_allow_html=True)
@@ -1320,18 +1320,18 @@ font-weight: 600;
         
         # Embed Sli.do with adjusted height and clickable link
         st.markdown("""
-            <a href="https://app.sli.do/event/3WAHPxwukLUzmdQH8VPyY8" target="_blank" style="font-size: 0.75rem; color: #F37021; margin-left: 10px; text-decoration: none;">
-                📱 Click to open Slido on your device
-            </a>
+        <a href="https://app.sli.do/event/3WAHPxwukLUzmdQH8VPyY8" target="_blank" style="font-size: 0.75rem; color: #fe5000; margin-bottom: 5px; display: block;">
+            📱 Click here to open Slido on your device
+        </a>
         """, unsafe_allow_html=True)
         
-        # Embed Sli.do using components.html with reduced height
         components.html(
             """
-            <div style="width: 100%; height: 100%;">
-            <iframe src="https://wall.sli.do/event/3WAHPxwukLUzmdQH8VPyY8/?section=cf35fe01-35ec-4732-a24f-01dbb4257c08" frameborder="0" style="width: 100%; height: 300px;" allow="camera; microphone; fullscreen; display-capture; autoplay">
-                        </iframe>
-            </div>
+            <iframe src="https://wall.sli.do/event/3WAHPxwukLUzmdQH8VPyY8/?section=cf35fe01-35ec-4732-a24f-01dbb4257c08" 
+                    frameborder="0" 
+                    style="width: 100%; height: 230px;" 
+                    allow="camera; microphone; fullscreen; display-capture; autoplay">
+            </iframe>
             """,
             height=250,
         )
@@ -1372,14 +1372,14 @@ font-weight: 600;
             
             # Embed Sli.do with adjusted height and clickable link
             st.markdown("""
-            <a href="https://app.sli.do/event/raPH3EvtzJPnVW84kh7svV" target="_blank" style="font-size: 0.75rem; color: #294237; margin-bottom: 5px; display: block;">
+            <a href="https://app.sli.do/event/3WAHPxwukLUzmdQH8VPyY8" target="_blank" style="font-size: 0.75rem; color: #fe5000; margin-bottom: 5px; display: block;">
                 📱 Click here to open Slido on your device
             </a>
             """, unsafe_allow_html=True)
             
             components.html(
                 """
-                <iframe src="https://wall.sli.do/event/raPH3EvtzJPnVW84kh7svV/?section=a91516a6-832e-408d-9afa-ec3f5034e0b2" 
+                <iframe src="https://wall.sli.do/event/3WAHPxwukLUzmdQH8VPyY8/?section=cf35fe01-35ec-4732-a24f-01dbb4257c08" 
                         frameborder="0" 
                         style="width: 100%; height: 230px;" 
                         allow="camera; microphone; fullscreen; display-capture; autoplay">
