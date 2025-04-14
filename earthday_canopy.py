@@ -1346,6 +1346,7 @@ def main():
             
             # Embed Sli.do with adjusted height and clickable link
             st.markdown("""
+
             <a href="https://app.sli.do/event/3WAHPxwukLUzmdQH8VPyY8" target="_blank" style="font-size: 0.75rem; color: #fe5000; margin-bottom: 5px; display: block;">
                 📱 Click here to open Slido on your device
             </a>
