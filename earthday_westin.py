@@ -1322,6 +1322,25 @@ font-weight: 600;
             """,
             height=250,
         )
+        st.markdown("""
+            <a href="https://app.sli.do/event/3WAHPxwukLUzmdQH8VPyY8" target="_blank" style="font-size: 0.75rem; color: #F37021; margin-left: 10px; text-decoration: none;">
+                📱 Click to open Slido on your device
+            </a>
+        """, unsafe_allow_html=True)
+        
+        # Embed Sli.do using components.html with reduced height
+        components.html(
+            """
+            <div style="width: 100%; height: 100%;">
+                <iframe src="https://wall.sli.do/event/3WAHPxwukLUzmdQH8VPyY8/?section=cf35fe01-35ec-4732-a24f-01dbb4257c08" 
+                        frameborder="0" 
+                        style="width: 100%; height: 230px;" 
+                        allow="camera; microphone; fullscreen; display-capture; autoplay">
+                </iframe>
+            </div>
+            """,
+            height=250,
+        )
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         # Desktop layout - side by side
