@@ -1058,6 +1058,8 @@ font-weight: 600;
 
     # Replace the existing header code in the header_col1 section with this:
 
+# Replace the existing header code in the header_col1 section with this:
+
     with header_col1:
         # Load and encode the image
         import base64
@@ -1069,15 +1071,25 @@ font-weight: 600;
             with open(img_path, "rb") as f:
                 img_data = base64.b64encode(f.read()).decode()
             
-            # Create HTML with vertical positioning and embedded image
+            # Create HTML with both logo and text explicitly left-aligned
             st.markdown(f"""
-            <div style="display: flex; flex-direction: column; align-items: left; text-align: left; gap: 5px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 5px; margin-left: 0;">
                 <img src="data:image/png;base64,{img_data}" 
-                    style="height: 65px; display: block; margin: 0 auto;"
+                    style="height: 65px; display: block; margin-left: 0; align-self: flex-start;"
                     alt="Westin">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
-                            display: block; margin: 0; padding: 0; text-align: left;">
+                            display: block; margin-left: 0; padding: 0; text-align: left; align-self: flex-start;">
                     CELEBRATES EARTH DAY 2025
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+        except Exception as e:
+            # Fallback if image loading fails
+            st.markdown("""
+            <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; margin-left: 0;">
+                <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
+                            display: block; margin-left: 0; padding: 0; text-align: left; align-self: flex-start;">
+                    THE WESTIN LONDON CITY CELEBRATES EARTH DAY 2025
                 </span>
             </div>
             """, unsafe_allow_html=True)
