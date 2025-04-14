@@ -1071,12 +1071,12 @@ font-weight: 600;
             
             # Create HTML with vertical positioning and embedded image
             st.markdown(f"""
-            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 5px;">
+            <div style="display: flex; flex-direction: column; align-items: left; text-align: center; gap: 5px;">
                 <img src="data:image/png;base64,{img_data}" 
                     style="height: 65px; display: block; margin: 0 auto;"
                     alt="Westin">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
-                            display: block; margin: 0; padding: 0; text-align: center;">
+                            display: block; margin: 0; padding: 0; text-align: left;">
                     CELEBRATES EARTH DAY 2025
                 </span>
             </div>
