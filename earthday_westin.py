@@ -1329,11 +1329,8 @@ font-weight: 600;
         components.html(
             """
             <div style="width: 100%; height: 100%;">
-                <iframe src="https://wall.sli.do/event/3WAHPxwukLUzmdQH8VPyY8/?section=cf35fe01-35ec-4732-a24f-01dbb4257c08" 
-                        frameborder="0" 
-                        style="width: 100%; height: 230px;" 
-                        allow="camera; microphone; fullscreen; display-capture; autoplay">
-                </iframe>
+            <iframe src="https://wall.sli.do/event/3WAHPxwukLUzmdQH8VPyY8/?section=cf35fe01-35ec-4732-a24f-01dbb4257c08" frameborder="0" style="width: 100%; height: 300px;" allow="camera; microphone; fullscreen; display-capture; autoplay">
+                        </iframe>
             </div>
             """,
             height=250,
