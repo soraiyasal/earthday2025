@@ -159,46 +159,69 @@ def generate_simulated_data():
     
     return data
 
-# Get matching day pairs for accurate comparison
+# Get matching day pairs for accurate comparison - UPDATED FOR EXACT DATE MATCHING
 def get_matching_day_pairs(data, current_start, current_end, compare_start, compare_end):
     """
-    Extracts only day pairs that exist in both current and comparison periods,
-    matching by day-of-week and week-of-month to ensure valid comparisons.
+    Extracts day pairs that match exactly by calendar date between years
+    (e.g., April 1, 2025 matches with April 1, 2024)
     """
+    # Debug header
+    print(f"\nDEBUG get_matching_day_pairs:")
+    print(f"  Looking for matches between:")
+    print(f"  Current period: {current_start.strftime('%Y-%m-%d')} to {current_end.strftime('%Y-%m-%d')}")
+    print(f"  Compare period: {compare_start.strftime('%Y-%m-%d')} to {compare_end.strftime('%Y-%m-%d')}")
+    
     # Filter basic date ranges
     current_data = data[(data['Date'] >= current_start) & (data['Date'] <= current_end)].copy()
     compare_data = data[(data['Date'] >= compare_start) & (data['Date'] <= compare_end)].copy()
     
-    # Create matching metadata
-    current_data['day_of_week'] = current_data['Date'].dt.dayofweek
-    current_data['week_of_month'] = (current_data['Date'].dt.day - 1) // 7 + 1
-    current_data['month'] = current_data['Date'].dt.month
+    # Debug counts before matching
+    print(f"  Records in current period: {len(current_data)}")
+    print(f"  Records in compare period: {len(compare_data)}")
     
-    compare_data['day_of_week'] = compare_data['Date'].dt.dayofweek
-    compare_data['week_of_month'] = (compare_data['Date'].dt.day - 1) // 7 + 1
-    compare_data['month'] = compare_data['Date'].dt.month
+    # Create month-day keys for matching (ignoring year)
+    current_data['month_day'] = current_data['Date'].dt.strftime('%m-%d')
+    compare_data['month_day'] = compare_data['Date'].dt.strftime('%m-%d')
     
-    # Create a match key for equivalent days (same day-of-week, week-of-month, month)
-    current_data['match_key'] = current_data['month'].astype(str) + "-" + \
-                               current_data['week_of_month'].astype(str) + "-" + \
-                               current_data['day_of_week'].astype(str)
+    # Debug unique month-days in each period
+    print(f"  Unique month-days in current period: {len(set(current_data['month_day']))}")
+    print(f"  Unique month-days in compare period: {len(set(compare_data['month_day']))}")
     
-    compare_data['match_key'] = compare_data['month'].astype(str) + "-" + \
-                               compare_data['week_of_month'].astype(str) + "-" + \
-                               compare_data['day_of_week'].astype(str)
-    
-    # Find common match keys
-    current_keys = set(current_data['match_key'])
-    compare_keys = set(compare_data['match_key'])
+    # Find common month-day combinations
+    current_keys = set(current_data['month_day'])
+    compare_keys = set(compare_data['month_day'])
     common_keys = current_keys.intersection(compare_keys)
     
+    # Debug common keys
+    print(f"  Number of common month-days: {len(common_keys)}")
+    if len(common_keys) > 0:
+        print(f"  First 5 common month-days: {list(common_keys)[:5]}")
+    
     # Filter to matching days only
-    current_matched = current_data[current_data['match_key'].isin(common_keys)]
-    compare_matched = compare_data[compare_data['match_key'].isin(common_keys)]
+    current_matched = current_data[current_data['month_day'].isin(common_keys)]
+    compare_matched = compare_data[compare_data['month_day'].isin(common_keys)]
+    
+    # Debug counts after matching
+    print(f"  Matched records in current period: {len(current_matched)}")
+    print(f"  Matched records in compare period: {len(compare_matched)}")
+    
+    # Debug the first few matched days to verify the matching is correct
+    if len(current_matched) > 0 and len(compare_matched) > 0:
+        print("\n  Sample of matched days (first 3):")
+        for i, (_, curr_row) in enumerate(current_matched.sort_values('Date').head(3).iterrows()):
+            comp_row = compare_matched[compare_matched['month_day'] == curr_row['month_day']].iloc[0]
+            print(f"    Match {i+1}: {curr_row['Date'].strftime('%Y-%m-%d')} matches with {comp_row['Date'].strftime('%Y-%m-%d')}")
+            print(f"      Current usage: {curr_row['Total Usage']:.2f} kWh")
+            print(f"      Compare usage: {comp_row['Total Usage']:.2f} kWh")
+            print(f"      Savings: {comp_row['Total Usage'] - curr_row['Total Usage']:.2f} kWh")
     
     # Calculate match quality metrics
     total_expected_days = (current_end - current_start).days + 1
     match_percentage = (len(common_keys) / total_expected_days) * 100
+    
+    # Debug match quality
+    print(f"  Expected days in period: {total_expected_days}")
+    print(f"  Match percentage: {match_percentage:.1f}%")
     
     return {
         'current_data': current_matched,
@@ -208,7 +231,6 @@ def get_matching_day_pairs(data, current_start, current_end, compare_start, comp
         'match_percentage': match_percentage
     }
 
-# Get KPIs using matched day pairs
 def get_matched_kpis(data, current_start, current_end, compare_start, compare_end):
     # Get matched day pairs
     matched_data = get_matching_day_pairs(data, current_start, current_end, compare_start, compare_end)
@@ -219,6 +241,13 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     # Calculate metrics based only on matched days
     current_total = current_data['Total Usage'].sum()
     compare_total = compare_data['Total Usage'].sum()
+    
+    # DEBUG: Print totals and date ranges to understand why YTD might be lower
+    print(f"\nDEBUG KPI Calculations:")
+    print(f"  Period: {current_start.strftime('%Y-%m-%d')} to {current_end.strftime('%Y-%m-%d')}")
+    print(f"  Matched days count: {len(current_data)}")
+    print(f"  Current year total usage: {current_total:.2f} kWh")
+    print(f"  Previous year total usage: {compare_total:.2f} kWh")
     
     # Handle edge case where compare_total is 0
     if compare_total == 0:
@@ -236,8 +265,13 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     # Calculate kWh saved
     kwh_saved = compare_total - current_total
     
+    # DEBUG: Print savings
+    print(f"  kWh saved: {kwh_saved:.2f}")
+    print(f"  CO2 saved: {co2_saved:.2f} kg")
+    print(f"  Percent change: {percent_change:.2f}%")
+    
     # Calculate per-guest usage (with average of 202 guests per night)
-    avg_guests = 202
+    avg_guests = 235
     if len(current_data) > 0:
         guest_usage = current_total / (len(current_data) * avg_guests)
     else:
@@ -263,6 +297,11 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         kwh_saved = compare_total - current_total
         co2_saved = kwh_saved * ELECTRICITY_FACTOR
     
+    # DEBUG: Print final metrics after adjustments
+    print(f"  Final kWh saved: {kwh_saved:.2f}")
+    print(f"  Final CO2 saved: {co2_saved:.2f} kg")
+    print(f"  Progress percentage: {progress_percentage:.2f}%")
+    
     remaining_kwh = max(0, current_total - target_usage)
     
     # Include match quality metrics
@@ -283,13 +322,19 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         'target_savings_percent': target_savings_percent,
         'trees_equivalent': trees_equivalent
     }
-
-# Get compare dates from previous year
+# Get compare dates from previous year - UPDATED FOR EXACT DATE MATCHING
 def get_comparative_period(current_start, current_end):
-    # Get same period from last year
-    days_diff = (current_end - current_start).days
-    last_year_end = current_end - pd.DateOffset(years=1)
-    last_year_start = last_year_end - timedelta(days=days_diff)
+    """
+    Get exact same calendar dates from previous year
+    """
+    # Get exact same dates from last year
+    last_year_start = current_start.replace(year=current_start.year - 1)
+    last_year_end = current_end.replace(year=current_end.year - 1)
+    
+    # Debug output to console
+    print(f"DEBUG get_comparative_period:")
+    print(f"  Current period: {current_start.strftime('%Y-%m-%d')} to {current_end.strftime('%Y-%m-%d')}")
+    print(f"  Compare period: {last_year_start.strftime('%Y-%m-%d')} to {last_year_end.strftime('%Y-%m-%d')}")
     
     return last_year_start, last_year_end
 
@@ -747,6 +792,7 @@ font-weight: 600;
             text-align: center;
         }
         
+
 /* Responsive adjustments */
         @media (max-width: 992px) {
             .header-title {
@@ -1480,3 +1526,5 @@ chip.addEventListener('mouseout', function() {
 
 if __name__ == "__main__":
     main()
+
+

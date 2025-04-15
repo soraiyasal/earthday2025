@@ -168,42 +168,25 @@ def generate_simulated_data():
 # Get matching day pairs for accurate comparison
 def get_matching_day_pairs(data, current_start, current_end, compare_start, compare_end):
     """
-    Extracts only day pairs that exist in both current and comparison periods,
-    matching by day-of-week and week-of-month to ensure valid comparisons.
-    
-    Note: This function only compares days that exist in both periods with the
-    same day-of-week, week-of-month, and month position to ensure a fair comparison.
+    Extracts day pairs that match exactly by calendar date between years
+    (e.g., April 1, 2025 matches with April 1, 2024)
     """
     # Filter basic date ranges
     current_data = data[(data['Date'] >= current_start) & (data['Date'] <= current_end)].copy()
     compare_data = data[(data['Date'] >= compare_start) & (data['Date'] <= compare_end)].copy()
     
-    # Create matching metadata
-    current_data['day_of_week'] = current_data['Date'].dt.dayofweek
-    current_data['week_of_month'] = (current_data['Date'].dt.day - 1) // 7 + 1
-    current_data['month'] = current_data['Date'].dt.month
+    # Create month-day keys for matching (ignoring year)
+    current_data['month_day'] = current_data['Date'].dt.strftime('%m-%d')
+    compare_data['month_day'] = compare_data['Date'].dt.strftime('%m-%d')
     
-    compare_data['day_of_week'] = compare_data['Date'].dt.dayofweek
-    compare_data['week_of_month'] = (compare_data['Date'].dt.day - 1) // 7 + 1
-    compare_data['month'] = compare_data['Date'].dt.month
-    
-    # Create a match key for equivalent days (same day-of-week, week-of-month, month)
-    current_data['match_key'] = current_data['month'].astype(str) + "-" + \
-                               current_data['week_of_month'].astype(str) + "-" + \
-                               current_data['day_of_week'].astype(str)
-    
-    compare_data['match_key'] = compare_data['month'].astype(str) + "-" + \
-                               compare_data['week_of_month'].astype(str) + "-" + \
-                               compare_data['day_of_week'].astype(str)
-    
-    # Find common match keys
-    current_keys = set(current_data['match_key'])
-    compare_keys = set(compare_data['match_key'])
+    # Find common month-day combinations
+    current_keys = set(current_data['month_day'])
+    compare_keys = set(compare_data['month_day'])
     common_keys = current_keys.intersection(compare_keys)
     
     # Filter to matching days only
-    current_matched = current_data[current_data['match_key'].isin(common_keys)]
-    compare_matched = compare_data[compare_data['match_key'].isin(common_keys)]
+    current_matched = current_data[current_data['month_day'].isin(common_keys)]
+    compare_matched = compare_data[compare_data['month_day'].isin(common_keys)]
     
     # Calculate match quality metrics
     total_expected_days = (current_end - current_start).days + 1
@@ -216,7 +199,6 @@ def get_matching_day_pairs(data, current_start, current_end, compare_start, comp
         'expected_day_count': total_expected_days,
         'match_percentage': match_percentage
     }
-
 # Get KPIs using matched day pairs
 # In your get_matched_kpis function (around line 427), add debug logging:
 
@@ -231,17 +213,18 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     current_total = current_data['Total Usage'].sum()
     compare_total = compare_data['Total Usage'].sum()
     
-    # Add this debug print statement
-    print(f"DEBUG: current_total={current_total}, compare_total={compare_total}")
+    # DEBUG: Print totals and date ranges to understand why YTD might be lower
+    print(f"\nDEBUG KPI Calculations:")
+    print(f"  Period: {current_start.strftime('%Y-%m-%d')} to {current_end.strftime('%Y-%m-%d')}")
+    print(f"  Matched days count: {len(current_data)}")
+    print(f"  Current year total usage: {current_total:.2f} kWh")
+    print(f"  Previous year total usage: {compare_total:.2f} kWh")
     
     # Handle edge case where compare_total is 0
     if compare_total == 0:
         percent_change = 0
     else:
         percent_change = ((current_total - compare_total) / compare_total) * 100
-    
-    # Add this debug print statement
-    print(f"DEBUG: percent_change={percent_change}")
     
     # Calculate daily averages
     current_daily_avg = current_data['Total Usage'].mean()
@@ -250,30 +233,29 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     # Calculate CO2 impact
     co2_saved = (compare_total - current_total) * ELECTRICITY_FACTOR
     
-    # This is likely the issue! Fix the calculations:
+    # Calculate kWh saved
     kwh_saved = compare_total - current_total
     
-    # Add these debug print statements
-    print(f"DEBUG: co2_saved (raw)={co2_saved}")
-    print(f"DEBUG: kwh_saved (raw)={kwh_saved}")
+    # DEBUG: Print savings
+    print(f"  kWh saved: {kwh_saved:.2f}")
+    print(f"  CO2 saved: {co2_saved:.2f} kg")
+    print(f"  Percent change: {percent_change:.2f}%")
     
-    # Calculate per-guest usage (with average of 235 guests per night)
+    # Calculate per-guest usage (with average of 202 guests per night)
     avg_guests = 202
-    guest_usage = current_total / (len(current_data) * avg_guests)
+    if len(current_data) > 0:
+        guest_usage = current_total / (len(current_data) * avg_guests)
+    else:
+        guest_usage = 0 
     
     # Add context to CO2 saved - trees equivalent
     # Average tree absorbs about 22 kg of CO2 per year
-    # Source: UK Forestry Commission approximate figures
     trees_equivalent = int(co2_saved / 22)
     
     # Calculate progress toward 10% savings goal
     target_savings_percent = 10
     target_usage = compare_total * (1 - target_savings_percent/100)
     progress_percentage = min(100, max(0, ((compare_total - current_total) / (compare_total - target_usage)) * 100))
-    
-    # Debug the progress calculation
-    print(f"DEBUG: target_usage={target_usage}")
-    print(f"DEBUG: progress_percentage={progress_percentage}")
     
     # Make sure kwh_saved and co2_saved are properly calculated
     # If current_total is higher than compare_total, then there are no savings
@@ -286,8 +268,10 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         kwh_saved = compare_total - current_total
         co2_saved = kwh_saved * ELECTRICITY_FACTOR
     
-    # Debug final values
-    print(f"DEBUG: final kwh_saved={kwh_saved}, co2_saved={co2_saved}, progress_percentage={progress_percentage}")
+    # DEBUG: Print final metrics after adjustments
+    print(f"  Final kWh saved: {kwh_saved:.2f}")
+    print(f"  Final CO2 saved: {co2_saved:.2f} kg")
+    print(f"  Progress percentage: {progress_percentage:.2f}%")
     
     remaining_kwh = max(0, current_total - target_usage)
     
@@ -298,8 +282,8 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
         'percent_change': percent_change,
         'current_daily_avg': current_daily_avg,
         'compare_daily_avg': compare_daily_avg,
-        'co2_saved': co2_saved,  # No max(0, ...) as we handle it above
-        'kwh_saved': kwh_saved,  # No max(0, ...) as we handle it above 
+        'co2_saved': co2_saved,
+        'kwh_saved': kwh_saved,
         'matched_day_count': matched_data['matched_day_count'],
         'expected_day_count': matched_data['expected_day_count'],
         'match_percentage': matched_data['match_percentage'],
@@ -312,10 +296,17 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
 
 # Get compare dates from previous year
 def get_comparative_period(current_start, current_end):
-    # Get same period from last year
-    days_diff = (current_end - current_start).days
-    last_year_end = current_end - pd.DateOffset(years=1)
-    last_year_start = last_year_end - timedelta(days=days_diff)
+    """
+    Get exact same calendar dates from previous year
+    """
+    # Get exact same dates from last year
+    last_year_start = current_start.replace(year=current_start.year - 1)
+    last_year_end = current_end.replace(year=current_end.year - 1)
+    
+    # Debug output to console
+    print(f"DEBUG get_comparative_period:")
+    print(f"  Current period: {current_start.strftime('%Y-%m-%d')} to {current_end.strftime('%Y-%m-%d')}")
+    print(f"  Compare period: {last_year_start.strftime('%Y-%m-%d')} to {last_year_end.strftime('%Y-%m-%d')}")
     
     return last_year_start, last_year_end
 
