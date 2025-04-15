@@ -238,7 +238,10 @@ def get_matched_kpis(data, current_start, current_end, compare_start, compare_en
     
     # Calculate per-guest usage (with average of 202 guests per night)
     avg_guests = 202
-    guest_usage = current_total / (len(current_data) * avg_guests)
+    if len(current_data) > 0:
+        guest_usage = current_total / (len(current_data) * avg_guests)
+    else:
+        guest_usage = 0 
     
     # Add context to CO2 saved - trees equivalent
     # Average tree absorbs about 22 kg of CO2 per year
