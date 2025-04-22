@@ -695,7 +695,7 @@ def main():
         1. Share these insights with your team
         2. Focus on high-usage days
         3. Implement at least one tip this week
-        4. Check back to see your progress!
+        4. Check back to see your progress!!
         """)
     
     # Footer info
