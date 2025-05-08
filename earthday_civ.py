@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 # Constants
-ELECTRICITY_FACTOR = 0.20493  # CO2 emission factor for electricity
+ELECTRICITY_FACTOR = 0.00020493  # 2024/2025 factor
 SELECTED_HOTEL = 'CIV'  # Fixed to CIV, no selection needed
 
 # Comfort Inn Brand Colors

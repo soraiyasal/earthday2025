@@ -73,7 +73,7 @@ hotel_colors = {
 }
 
 # Electricity factors
-ELECTRICITY_FACTOR = 0.20493  # 2024/2025 factor
+ELECTRICITY_FACTOR = 0.00020493  # 2024/2025 factor
 
 # Top energy saving tips - super simple
 energy_tips = [

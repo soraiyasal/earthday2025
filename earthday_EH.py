@@ -47,7 +47,7 @@ def get_hotel_mpan(hotel_name):
 HOTEL_MPAN = get_hotel_mpan(HOTEL_NAME)
 
 # Electricity factors
-ELECTRICITY_FACTOR = 0.20493  # 2024/2025 factor
+ELECTRICITY_FACTOR = 0.00020493  # 2024/2025 factor
 
 # Load custom CSS with Canopy by Hilton London City branding and responsive design
 st.markdown("""
