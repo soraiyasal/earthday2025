@@ -9,13 +9,12 @@ import random
 
 # Set page config - must be first Streamlit command
 st.set_page_config(
-    page_title="Earth Day Hotel Race 2025", 
+    page_title="Electricity Hotel Race 2025", 
     page_icon="🏆", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Hide sidebar and add colorful styling
 st.markdown("""
 <style>
     /* Hide sidebar controls */
@@ -41,6 +40,36 @@ st.markdown("""
     [data-testid="stMetricValue"] {
         font-size: 3rem !important;
         color: #002d72;
+    }
+    
+    /* Improved alignment for the info box and dropdown */
+    .stSelectbox {
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    
+    /* Make the selectbox label vertically aligned with info box */
+    .stSelectbox label {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        line-height: 1.2 !important;
+    }
+    
+    /* Info box styling to match your screenshot */
+    div[data-testid="stInfoBox"] {
+        background-color: #f0f8ff !important;
+        padding: 5px 10px !important;
+        margin-top: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        height: 100% !important;
+    }
+    
+    /* Make sure elements vertically center in their columns */
+    .row-widget {
+        display: flex !important;
+        align-items: center !important;
+        height: 100% !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -122,7 +151,7 @@ def load_data():
         if 'conn' in locals():
             conn.close()
 
-# Generate simulated data for testing
+# Generate simulated data for testing if needed
 def generate_simulated_data():
     # Create date range for the last 2 years
     end_date = datetime.today()
@@ -484,10 +513,54 @@ def create_weekly_pattern(data, current_start, current_end):
     
     return fig, highest_day, lowest_day
 
+# Get available months from data
+def get_available_months(data, year):
+    """
+    Get months that have data available for all hotels
+    """
+    dates = find_available_dates(data, year)
+    if not dates:
+        return []
+    
+    # Extract unique months
+    months = sorted(list(set([date.month for date in dates])))
+    return months
+
+# Format period option with emoji
+def format_period_option(period_type, period_value=None, month_num=None, year=None):
+    """
+    Format period options with emojis
+    """
+    emoji_map = {
+        "ytd": "🔄",
+        "last_days": "📊",
+        "this_month": "📆",
+        "prev_month": "📆",
+        "specific_month": "📆"
+    }
+    
+    emoji = emoji_map.get(period_type, "📅")
+    
+    if period_type == "ytd":
+        return f"{emoji} Year to Date"
+    elif period_type == "last_days":
+        return f"{emoji} Last {period_value} Days"
+    elif period_type == "this_month":
+        return f"{emoji} This Month"
+    elif period_type == "prev_month":
+        return f"{emoji} Previous Month"
+    elif period_type == "specific_month":
+        month_name = datetime(year, month_num, 1).strftime("%B")
+        return f"{emoji} {month_name} {year}"
+    
+    return f"{emoji} Custom Period"
+
+
+
 # Main dashboard
 def main():
     # Title with fun emoji
-    st.title("🏆 Earth Day Hotel Race 2025")
+    st.title("🏆 Electricity Hotel Race 2025")
     
     # Load data
     data = load_data()
@@ -497,72 +570,58 @@ def main():
     current_year = today.year
     previous_year = current_year - 1
     
-    # Period selector with fun emojis
-    col1, col2 = st.columns([1, 3])
+    # Get available months for dynamic dropdown
+    current_year_months = get_available_months(data, current_year)
     
+    # Create dynamic period options
+    period_options = [
+        format_period_option("ytd"),
+        format_period_option("last_days", 7),
+        format_period_option("last_days", 30),
+        format_period_option("this_month"),
+        format_period_option("prev_month")
+    ]
+    
+    # Add available months dynamically
+    for month in current_year_months:
+        period_options.append(format_period_option("specific_month", month_num=month, year=current_year))
+    
+    # Period selector with fun emojis
+    # Period selector with better alignment to info box
+    col1, col2 = st.columns([1, 3])
+
     with col1:
+        st.write("") # Add a tiny bit of padding if needed
         period = st.selectbox(
             "📅 Select time period",
-            options=[
-                "🔄 Year to Date",
-                "🌍 Earth Day Challenge",
-                "📊 Last 7 Days",
-                "📈 Last 30 Days",
-                "📆 This Month",
-                "📆 Previous Month",
-                "📆 January 2025",
-                "📆 February 2025",
-                "📆 March 2025",
-                "📆 April 2025"
-            ],
-            index=1
+            options=period_options,
+            index=1  # Default to last 7 days
         )
-        
         period_text = period.split(" ", 1)[1]  # Remove the emoji prefix
-    
+
     with col2:
-        # Fun energy fact
+        # Fun energy fact - the st.info box will now align better with the dropdown
         st.info("**💡 Did You Know?** " + random.choice([
             "A 1°C reduction in room temperature saves up to 8% on energy costs!",
             "Hotels typically spend 6-10% of their operating costs on energy!",
             "LED lights use up to 90% less energy than traditional bulbs!",
             "Only 3-5% of hotel guests choose to reuse towels - which uses a lot of energy!"
         ]))
-    
-    # Helper function to get month name based on period
-    def get_month_name(period_str):
-        if "January" in period_str:
-            return "January"
-        elif "February" in period_str:
-            return "February"
-        elif "March" in period_str:
-            return "March"
-        elif "April" in period_str:
-            return "April"
-        elif "This Month" in period_str:
-            return datetime.today().strftime("%B")
-        elif "Previous Month" in period_str:
-            # Get the first day of current month, then go back one day to get previous month
-            first_day_current_month = datetime(today.year, today.month, 1)
-            last_day_prev_month = first_day_current_month - timedelta(days=1)
-            return last_day_prev_month.strftime("%B")
-        else:
-            return None
-    
-    # Set date ranges based on selection
-    if period_text == "Last 7 Days":
+        
+    # Parse selected period to determine date range
+    if "Year to Date" in period:
+        period_end = today
+        period_start = datetime(current_year, 1, 1)
+    elif "Last 7 Days" in period:
         period_end = today
         period_start = today - timedelta(days=7)
-    elif period_text == "Last 30 Days":
+    elif "Last 30 Days" in period:
         period_end = today
         period_start = today - timedelta(days=30)
-    elif period_text == "Earth Day Challenge":
-        period_end = datetime(2025, 4, 22)
-        period_start = datetime(2025, 4, 15)
-    elif period_text == "This Month":
+    elif "This Month" in period:
         period_start = datetime(today.year, today.month, 1)
         period_end = today
-    elif period_text == "Previous Month":
+    elif "Previous Month" in period:
         # Get the first day of current month
         first_day_current_month = datetime(today.year, today.month, 1)
         # Then go back one day to get the last day of previous month
@@ -570,21 +629,22 @@ def main():
         # Then get the first day of previous month
         period_start = datetime(last_day_prev_month.year, last_day_prev_month.month, 1)
         period_end = last_day_prev_month
-    elif period_text == "January 2025":
-        period_start = datetime(2025, 1, 1)
-        period_end = datetime(2025, 1, 31)
-    elif period_text == "February 2025":
-        period_start = datetime(2025, 2, 1)
-        period_end = datetime(2025, 2, 28)  # Note: 2025 is not a leap year
-    elif period_text == "March 2025":
-        period_start = datetime(2025, 3, 1)
-        period_end = datetime(2025, 3, 31)
-    elif period_text == "April 2025":
-        period_start = datetime(2025, 4, 1)
-        period_end = datetime(2025, 4, 30)
-    else:  # Year to Date
-        period_end = today
-        period_start = datetime(current_year, 1, 1)
+    else:
+        # It's a specific month
+        month_name = period_text.split()[0]  # E.g., "January"
+        month_num = datetime.strptime(month_name, "%B").month
+        year = int(period_text.split()[1])  # E.g., "2025"
+        
+        period_start = datetime(year, month_num, 1)
+        # Get the last day of the month
+        if month_num == 12:
+            next_month_year = year + 1
+            next_month = 1
+        else:
+            next_month_year = year
+            next_month = month_num + 1
+            
+        period_end = datetime(next_month_year, next_month, 1) - timedelta(days=1)
     
     # Find days that have data for all hotels in both years
     matched_dates = find_matching_days(data, current_year, previous_year, period_start, period_end)
@@ -599,13 +659,25 @@ def main():
     # Calculate overall metrics
     total_kwh_saved = sum(hotel_metrics['kwh_saved'] for hotel_metrics in metrics.values())
     
-    # Get month name if it's a monthly comparison
-    month_name = get_month_name(period)
-    
-    if month_name:
+    # Format date display text
+    if "Year to Date" in period:
+        date_text = f"Year to Date {current_year} vs {previous_year}"
+    elif "Last" in period:
+        days_text = "7" if "7" in period else "30"
+        date_text = f"Last {days_text} Days {current_year} vs {previous_year}"
+    elif "This Month" in period:
+        month_name = today.strftime("%B")
+        date_text = f"{month_name} {current_year} vs {month_name} {previous_year}"
+    elif "Previous Month" in period:
+        # Get previous month name
+        first_day_current_month = datetime(today.year, today.month, 1)
+        last_day_prev_month = first_day_current_month - timedelta(days=1)
+        month_name = last_day_prev_month.strftime("%B")
         date_text = f"{month_name} {current_year} vs {month_name} {previous_year}"
     else:
-        date_text = f"{period_text} {current_year} vs {previous_year}"
+        # Specific month
+        month_name = period_text.split()[0]  # E.g., "January"
+        date_text = f"{month_name} {current_year} vs {month_name} {previous_year}"
     
     # Create 3 big metrics in a row
     metric1, metric2, metric3 = st.columns(3)
@@ -698,8 +770,42 @@ def main():
         4. Check back to see your progress!!
         """)
     
+    # Add custom date range option
+    if st.button("📅 Want to select a custom date range?"):
+        st.session_state.show_custom_dates = True
+    
+    # Show custom date selector if requested
+    if 'show_custom_dates' in st.session_state and st.session_state.show_custom_dates:
+        st.markdown("### 📅 Custom Date Range")
+        custom_col1, custom_col2 = st.columns(2)
+        
+        with custom_col1:
+            min_date = data['Date'].min().to_pydatetime()
+            max_date = data['Date'].max().to_pydatetime()
+            
+            # Only include dates where we have data for all hotels in both years
+            custom_start = st.date_input("Start Date", value=period_start, min_value=min_date, max_value=max_date)
+        
+        with custom_col2:
+            custom_end = st.date_input("End Date", value=period_end, min_value=min_date, max_value=max_date)
+        
+        if st.button("Apply Custom Date Range"):
+            # Convert to datetime
+            custom_start_dt = datetime.combine(custom_start, datetime.min.time())
+            custom_end_dt = datetime.combine(custom_end, datetime.min.time())
+            
+            # Redirect to the same page but with the custom date range
+            st.experimental_rerun()
+            # In a real app, you would store these dates in session state and use them
+            # st.session_state.custom_start = custom_start_dt
+            # st.session_state.custom_end = custom_end_dt
+    
     # Footer info
-    st.caption(f"Holiday Inn Hotels Earth Day Challenge | Showing data from {date_info} | {len(matched_dates['current_dates'])} days compared")
+    st.caption(f"4C Group Electricity Data | Showing data from {date_info} | {len(matched_dates['current_dates'])} days compared")
+
+    # Add data refresh information
+    last_refresh = datetime.now().strftime("%b %d, %Y at %H:%M")
+    st.caption(f"Data last refreshed: {last_refresh}")
 
 if __name__ == "__main__":
     main()

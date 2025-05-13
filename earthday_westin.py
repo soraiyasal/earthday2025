@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 
 # Set page config - must be first Streamlit command
 st.set_page_config(
-    page_title="Westin Earth Day 2025", 
+    page_title="Westin", 
     page_icon="🌍", 
     layout="wide",
     initial_sidebar_state="collapsed"  # Start with sidebar collapsed
@@ -1128,7 +1128,6 @@ font-weight: 600;
                     alt="Westin">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
                             display: block; margin-left: 0; padding: 0; text-align: left; align-self: flex-start;">
-                    Celebrates Earth Day 2025
                 </span>
             </div>
             """, unsafe_allow_html=True)
@@ -1138,7 +1137,7 @@ font-weight: 600;
             <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; margin-left: 0;">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
                             display: block; margin-left: 0; padding: 0; text-align: left; align-self: flex-start;">
-                    THE WESTIN LONDON CITY Celebrates Earth Day 2025
+                    THE WESTIN LONDON CITY 
                 </span>
             </div>
             """, unsafe_allow_html=True)
@@ -1148,7 +1147,7 @@ font-weight: 600;
             <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
                 <span style="color: #51555A; font-size: 1.5rem; font-weight: 700; font-family: Arial, sans-serif; 
                             display: block; margin: 10px auto; padding: 0; text-align: center;">
-                    THE WESTIN LONDON CITY Celebrates Earth Day 2025
+                    THE WESTIN LONDON CITY 
                 </span>
             </div>
             """, unsafe_allow_html=True)
@@ -1365,7 +1364,7 @@ font-weight: 600;
         
         # Slido with Westin-styled title
         st.markdown('<div class="feedback-container">', unsafe_allow_html=True)
-        st.markdown('<h3 class="feedback-title">Heavenly Ideas for Earth Day</h3>', unsafe_allow_html=True)
+        st.markdown('<h3 class="feedback-title">Heavenly Ideas</h3>', unsafe_allow_html=True)
         
         # Embed Sli.do with adjusted height and clickable link
         st.markdown("""
@@ -1417,7 +1416,7 @@ font-weight: 600;
         # Slido with Westin-styled title
         with row2_cols[1]:
             st.markdown('<div class="feedback-container">', unsafe_allow_html=True)
-            st.markdown('<h3 class="feedback-title">Heavenly Ideas for Earth Day</h3>', unsafe_allow_html=True)
+            st.markdown('<h3 class="feedback-title">Heavenly Ideas</h3>', unsafe_allow_html=True)
             
             # Embed Sli.do with adjusted height and clickable link
             st.markdown("""
@@ -1471,7 +1470,7 @@ font-weight: 600;
     # Footer with Westin branding and matched days info
     st.markdown(f"""
     <div class="footer">
-        The Westin London City | Earth Day Challenge | {current_start.strftime('%b %d')} - {current_end.strftime('%b %d, %Y')} | vs {compare_start.strftime('%b %d')} - {compare_end.strftime('%b %d, %Y')} | Based on {kpis['matched_day_count']} matched days out of {kpis['expected_day_count']} expected
+        The Westin London City | {current_start.strftime('%b %d')} - {current_end.strftime('%b %d, %Y')} | vs {compare_start.strftime('%b %d')} - {compare_end.strftime('%b %d, %Y')} | Based on {kpis['matched_day_count']} matched days out of {kpis['expected_day_count']} expected
     </div>
     """, unsafe_allow_html=True)
     
