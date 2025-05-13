@@ -770,42 +770,42 @@ def main():
         4. Check back to see your progress!!
         """)
     
-    # Add custom date range option
-    if st.button("📅 Want to select a custom date range?"):
-        st.session_state.show_custom_dates = True
+    # # Add custom date range option
+    # if st.button("📅 Want to select a custom date range?"):
+    #     st.session_state.show_custom_dates = True
     
-    # Show custom date selector if requested
-    if 'show_custom_dates' in st.session_state and st.session_state.show_custom_dates:
-        st.markdown("### 📅 Custom Date Range")
-        custom_col1, custom_col2 = st.columns(2)
+    # # Show custom date selector if requested
+    # if 'show_custom_dates' in st.session_state and st.session_state.show_custom_dates:
+    #     st.markdown("### 📅 Custom Date Range")
+    #     custom_col1, custom_col2 = st.columns(2)
         
-        with custom_col1:
-            min_date = data['Date'].min().to_pydatetime()
-            max_date = data['Date'].max().to_pydatetime()
+    #     with custom_col1:
+    #         min_date = data['Date'].min().to_pydatetime()
+    #         max_date = data['Date'].max().to_pydatetime()
             
-            # Only include dates where we have data for all hotels in both years
-            custom_start = st.date_input("Start Date", value=period_start, min_value=min_date, max_value=max_date)
+    #         # Only include dates where we have data for all hotels in both years
+    #         custom_start = st.date_input("Start Date", value=period_start, min_value=min_date, max_value=max_date)
         
-        with custom_col2:
-            custom_end = st.date_input("End Date", value=period_end, min_value=min_date, max_value=max_date)
+    #     with custom_col2:
+    #         custom_end = st.date_input("End Date", value=period_end, min_value=min_date, max_value=max_date)
         
-        if st.button("Apply Custom Date Range"):
-            # Convert to datetime
-            custom_start_dt = datetime.combine(custom_start, datetime.min.time())
-            custom_end_dt = datetime.combine(custom_end, datetime.min.time())
+    #     if st.button("Apply Custom Date Range"):
+    #         # Convert to datetime
+    #         custom_start_dt = datetime.combine(custom_start, datetime.min.time())
+    #         custom_end_dt = datetime.combine(custom_end, datetime.min.time())
             
-            # Redirect to the same page but with the custom date range
-            st.experimental_rerun()
-            # In a real app, you would store these dates in session state and use them
-            # st.session_state.custom_start = custom_start_dt
-            # st.session_state.custom_end = custom_end_dt
+    #         # Redirect to the same page but with the custom date range
+    #         st.experimental_rerun()
+    #         # In a real app, you would store these dates in session state and use them
+    #         # st.session_state.custom_start = custom_start_dt
+    #         # st.session_state.custom_end = custom_end_dt
     
     # Footer info
     st.caption(f"4C Group Electricity Data | Showing data from {date_info} | {len(matched_dates['current_dates'])} days compared")
 
-    # Add data refresh information
-    last_refresh = datetime.now().strftime("%b %d, %Y at %H:%M")
-    st.caption(f"Data last refreshed: {last_refresh}")
+    # # Add data refresh information
+    # last_refresh = datetime.now().strftime("%b %d, %Y at %H:%M")
+    # st.caption(f"Data last refreshed: {last_refresh}")
 
 if __name__ == "__main__":
     main()
