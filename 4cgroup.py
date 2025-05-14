@@ -560,7 +560,7 @@ def format_period_option(period_type, period_value=None, month_num=None, year=No
 # Main dashboard
 def main():
     # Title with fun emoji
-    st.title("🏆 Electricity Hotel Race 2025")
+    st.title("🏆 Electricity Hotel Race")
     
     # Load data
     data = load_data()
