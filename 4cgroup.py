@@ -7,119 +7,229 @@ from datetime import datetime, timedelta
 import sqlite3
 import random
 
-# Set page config - must be first Streamlit command
+# ─── Page config ────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Electricity Hotel Race", 
-    page_icon="🏆", 
-    layout="wide",
+    page_title="⚡ Hotel Energy Race",
+    page_icon="🏆",
+    layout="centered",
     initial_sidebar_state="collapsed"
 )
 
+# ─── CSS ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    /* Hide sidebar controls */
-    [data-testid="collapsedControl"] {display: none;}
-    section[data-testid="stSidebar"] {display: none !important;}
-    
-    /* Colorful progress bars */
-    .stProgress > div > div > div > div {
-        background-image: linear-gradient(to right, #00a74a, #4b70b3);
-    }
-    
-    /* Eye-catching header */
-    h1 {
-        background: linear-gradient(to right, #00a74a, #4b70b3);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 3rem !important;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    
-    /* Bold metrics */
-    [data-testid="stMetricValue"] {
-        font-size: 3rem !important;
-        color: #002d72;
-    }
-    
-    /* Improved alignment for the info box and dropdown */
-    .stSelectbox {
-        margin-bottom: 0 !important;
-        padding-bottom: 0 !important;
-    }
-    
-    /* Make the selectbox label vertically aligned with info box */
-    .stSelectbox label {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-        line-height: 1.2 !important;
-    }
-    
-    /* Info box styling to match your screenshot */
-    div[data-testid="stInfoBox"] {
-        background-color: #f0f8ff !important;
-        padding: 5px 10px !important;
-        margin-top: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        height: 100% !important;
-    }
-    
-    /* Make sure elements vertically center in their columns */
-    .row-widget {
-        display: flex !important;
-        align-items: center !important;
-        height: 100% !important;
-    }
+  /* ── Base reset ── */
+  [data-testid="collapsedControl"] { display: none; }
+  section[data-testid="stSidebar"]  { display: none !important; }
+  .block-container { padding: 1rem 1rem 3rem !important; max-width: 700px !important; }
+
+  /* ── Fonts ── */
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Lora:wght@400;500;600&display=swap');
+  html, body, [class*="css"] { font-family: 'Lora', Georgia, serif; }
+
+  /* ── Hero header ── */
+  .hero {
+    background: linear-gradient(135deg, #0a2540 0%, #1a4a6b 60%, #00a74a 100%);
+    border-radius: 20px;
+    padding: 2rem 1.5rem 1.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .hero-title {
+    font-family: 'DM Serif Display', sans-serif;
+    font-size: clamp(1.8rem, 6vw, 2.8rem);
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 0.3rem;
+    line-height: 1.1;
+    position: relative;
+  }
+  .hero-subtitle {
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    color: rgba(255,255,255,0.75);
+    margin: 0;
+    position: relative;
+  }
+  .lightning { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; animation: zap 2s ease-in-out infinite; }
+  @keyframes zap { 0%,100%{transform:scale(1) rotate(-5deg);} 50%{transform:scale(1.2) rotate(5deg);} }
+
+  /* ── Period selector card ── */
+  .selector-card {
+    background: #f7f9fc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.2rem;
+  }
+
+  /* ── Fact ticker ── */
+  .fact-pill {
+    background: linear-gradient(90deg, #e8f5e9, #e3f0ff);
+    border-left: 4px solid #00a74a;
+    border-radius: 10px;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    color: #1a3a4a;
+    margin-bottom: 1.4rem;
+    line-height: 1.4;
+  }
+  .fact-pill strong { color: #00a74a; }
+
+  /* ── KPI cards ── */
+  .kpi-row { display: flex; gap: 0.75rem; margin-bottom: 1.4rem; flex-wrap: wrap; }
+  .kpi-card {
+    flex: 1; min-width: 120px;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1rem 0.9rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform .15s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-icon { font-size: 1.6rem; display: block; margin-bottom: 0.25rem; }
+  .kpi-value { font-family: 'DM Serif Display', sans-serif; font-size: clamp(1.3rem,4vw,1.7rem); font-weight: 800; color: #0a2540; line-height: 1.1; }
+  .kpi-label { font-size: 0.72rem; color: #64748b; margin-top: 0.2rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .kpi-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 0.15rem; }
+
+  /* ── Section heading ── */
+  .section-heading {
+    font-family: 'DM Serif Display', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0a2540;
+    margin: 1.5rem 0 0.75rem;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+
+  /* ── Hotel rank cards ── */
+  .hotel-card {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    position: relative;
+    overflow: hidden;
+  }
+  .hotel-card.gold   { border-color: #f59e0b; background: linear-gradient(135deg,#fffbeb,#ffffff); }
+  .hotel-card.silver { border-color: #94a3b8; background: linear-gradient(135deg,#f8fafc,#ffffff); }
+  .hotel-card.bronze { border-color: #cd7f32; background: linear-gradient(135deg,#fdf6ee,#ffffff); }
+  .hotel-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+  .hotel-name { font-family: 'DM Serif Display', sans-serif; font-size: 1rem; font-weight: 700; color: #0a2540; }
+  .hotel-badge { font-size: 1.3rem; }
+  .hotel-rank { font-size: 1.4rem; margin-right: 0.4rem; }
+  .hotel-pct {
+    font-family: 'DM Serif Display', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 800;
+    padding: 0.15rem 0.6rem;
+    border-radius: 8px;
+    background: #f0fdf4;
+    color: #16a34a;
+  }
+  .hotel-pct.negative { background: #fff1f2; color: #dc2626; }
+  .hotel-pct.neutral  { background: #f1f5f9; color: #64748b; }
+
+  /* Progress track */
+  .track-wrap { position: relative; height: 14px; background: #f1f5f9; border-radius: 99px; overflow: visible; margin-bottom: 0.35rem; }
+  .track-fill { height: 100%; border-radius: 99px; transition: width 0.5s ease; position: relative; }
+  .track-goal-line {
+    position: absolute; top: -4px; bottom: -4px; width: 3px;
+    background: #ef4444; border-radius: 2px;
+    left: 100%; /* Will be set inline */ transform: translateX(-50%);
+  }
+  .track-label-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: #94a3b8; margin-top: 0.1rem; }
+  .goal-hit { font-size: 0.8rem; color: #16a34a; font-weight: 600; margin-top: 0.2rem; }
+
+  /* ── Tips grid ── */
+  .tips-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.65rem; margin-top: 0.5rem; }
+  .tip-card {
+    background: #f7f9fc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.8rem 0.7rem;
+    text-align: center;
+    font-size: 0.82rem;
+    color: #1e293b;
+    font-weight: 500;
+  }
+  .tip-card .tip-emoji { font-size: 1.5rem; display: block; margin-bottom: 0.3rem; }
+
+  /* ── Next steps ── */
+  .next-steps { background: linear-gradient(135deg,#0a2540,#1a4a6b); border-radius: 16px; padding: 1.2rem 1.3rem; color: #fff; margin-top: 1rem; }
+  .next-steps h4 { font-family:'DM Serif Display',sans-serif; font-size:1rem; margin:0 0 0.7rem; color:#ffffff; letter-spacing:.01em; }
+  .next-step-item { display:flex; align-items:flex-start; gap:0.6rem; margin-bottom:0.5rem; font-size:0.85rem; color:rgba(255,255,255,.85); }
+  .step-num { background:#00a74a; color:#fff; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; flex-shrink:0; margin-top:1px; }
+
+  /* ── Footer ── */
+  .dash-footer { text-align:center; font-size:0.75rem; color:#94a3b8; margin-top:2rem; padding-top:1rem; border-top:1px solid #e2e8f0; }
+
+  /* ── Plotly override: no white box ── */
+  .js-plotly-plot .plotly { background: transparent !important; }
+  
+  /* ── Streamlit widget overrides ── */
+  [data-testid="stMetricValue"] { font-size: 1.8rem !important; }
+  div[data-testid="stSelectbox"] { margin: 0 !important; }
+  .stSelectbox > label { font-weight: 600 !important; font-size: 0.85rem !important; color: #374151 !important; }
+  
+  /* Mobile tweaks */
+  @media (max-width: 480px) {
+    .kpi-row { gap: 0.5rem; }
+    .kpi-card { padding: 0.8rem 0.6rem; }
+    .hotel-card { padding: 0.85rem 0.9rem; }
+  }
 </style>
 """, unsafe_allow_html=True)
 
-# MPAN to Hotel mapping
+# ─── Constants ───────────────────────────────────────────────────────────────
 mpan_to_hotel = {
-    "2500021277783": "Westin", 
-    "1200051315859": "Camden", 
+    "2500021277783": "Westin",
+    "1200051315859": "Camden",
     "2500021281362": "Canopy",
-    "1200052502710": "EH", 
+    "1200052502710": "EH",
     "1050000997145": "St Albans"
 }
 
-# Fun hotel emojis for visual distinction
-hotel_emojis = {
-    "Westin": "🌲", 
-    "Camden": "🏙️", 
-    "Canopy": "🌴",
-    "EH": "🏰", 
-    "St Albans": "⛪"
-}
+hotel_emojis  = {"Westin": "🌲", "Camden": "🏙️", "Canopy": "🌴", "EH": "🏰", "St Albans": "⛪"}
+hotel_colors  = {"Westin": "#164b35", "Camden": "#8764b8", "Canopy": "#ff7800", "EH": "#00205c", "St Albans": "#002d72"}
+rank_medals   = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+rank_classes  = ["gold", "silver", "bronze", "", ""]
 
-# Hotel colors for consistent visualization
-hotel_colors = {
-    "Westin": "#164b35", 
-    "Camden": "#8764b8", 
-    "Canopy": "#ff7800",
-    "EH": "#00205c", 
-    "St Albans": "#002d72"
-}
+ELECTRICITY_FACTOR = 0.00020493  # kg CO₂ per kWh (2024/25)
 
-# Electricity factors
-ELECTRICITY_FACTOR = 0.00020493  # 2024/2025 factor
-
-# Top energy saving tips - super simple
 energy_tips = [
-    {"emoji": "💡", "tip": "Turn off lights"},
-    {"emoji": "🌡️", "tip": "Adjust temperature 1°"},
-    {"emoji": "🚿", "tip": "Shorter showers"},
-    {"emoji": "🔌", "tip": "Unplug devices"},
-    {"emoji": "⚡", "tip": "Report energy waste"}
+    {"emoji": "💡", "tip": "Turn off lights when leaving"},
+    {"emoji": "🌡️", "tip": "Drop temp by 1°C"},
+    {"emoji": "🚿", "tip": "Encourage shorter showers"},
+    {"emoji": "🔌", "tip": "Unplug idle devices"},
+    {"emoji": "⚡", "tip": "Report energy waste fast"},
+    {"emoji": "🪟", "tip": "Use natural light in the day"},
 ]
 
-# Load data from SQLite database or generate simulated data
+energy_facts = [
+    "A 1°C drop in room temperature saves up to **8%** on heating bills!",
+    "Hotels spend **6–10%** of operating costs on energy — every kWh counts.",
+    "LED lights use up to **90% less** energy than traditional bulbs.",
+    "Smart thermostats can cut HVAC energy use by up to **15%**.",
+    "Only **3–5%** of guests reuse towels — reminding them helps enormously!",
+    "Fixing a dripping hot-water tap can save **9,000 litres** per year.",
+]
+
+# ─── Data loading ─────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
 def load_data():
     try:
         conn = sqlite3.connect('electricity_data.db')
-        
-        # Load data for all hotels
         query = """
         SELECT strftime('%Y-%m-%d', Date) as Date,
                [Meter Point],
@@ -127,685 +237,461 @@ def load_data():
         FROM hh_data
         ORDER BY Date
         """
-        
         data = pd.read_sql_query(query, conn)
         data['Date'] = pd.to_datetime(data['Date'])
-        
-        # Map MPAN to hotel name
         data["Meter Point"] = data["Meter Point"].astype(str)
         data["Hotel"] = data["Meter Point"].map(mpan_to_hotel)
-        
-        # Ensure Total Usage is numeric
         data['Total Usage'] = pd.to_numeric(data['Total Usage'], errors='coerce').fillna(0)
-        
-        # Extract year from date
         data['Year'] = data['Date'].dt.year
-        
         return data
-        
-    except Exception as e:
-        st.error(f"Error: {str(e)}")
-        # Return simulated data if database fails
+    except Exception:
         return generate_simulated_data()
     finally:
         if 'conn' in locals():
             conn.close()
 
-# Generate simulated data for testing if needed
+
 def generate_simulated_data():
-    # Create date range for the last 2 years
-    end_date = datetime.today()
-    start_date = end_date - timedelta(days=365*2)
-    dates = pd.date_range(start=start_date, end=end_date, freq='D')
-    
-    # List of hotels
-    hotels = list(mpan_to_hotel.values())
-    
-    # Generate data for each hotel
-    all_data = []
-    
+    end_date   = datetime.today()
+    start_date = end_date - timedelta(days=365 * 2)
+    hotels     = list(mpan_to_hotel.values())
+    all_data   = []
+
+    configs = {
+        "Westin":    {"base": 180, "improve": 0.82, "end_offset": 1},
+        "Camden":    {"base": 220, "improve": 0.95, "end_offset": 0},
+        "Canopy":    {"base": 200, "improve": 0.88, "end_offset": 2},
+        "EH":        {"base": 190, "improve": 0.90, "end_offset": 2},
+        "St Albans": {"base": 210, "improve": 0.85, "end_offset": 2},
+    }
+
     for hotel in hotels:
-        # Base usage varies by hotel (some more efficient than others)
-        if hotel == "Westin":
-            base_usage = 180  # More efficient
-        elif hotel == "Camden":
-            base_usage = 220  # Less efficient
-        elif hotel == "Canopy":
-            base_usage = 200
-        elif hotel == "EH":
-            base_usage = 190
-        else:  # St Albans
-            base_usage = 210
-            
-        # Get MPAN for this hotel
-        hotel_mpan = next((mpan for mpan, h in mpan_to_hotel.items() if h == hotel), "unknown")
-            
-        # Different improvement rates for each hotel
-        if hotel == "Westin":
-            improvement_factor = 0.82  # 18% improvement
-        elif hotel == "Camden":
-            improvement_factor = 0.95  # 5% improvement
-        elif hotel == "Canopy":
-            improvement_factor = 0.88  # 12% improvement
-        elif hotel == "EH":
-            improvement_factor = 0.90  # 10% improvement
-        else:  # St Albans
-            improvement_factor = 0.85  # 15% improvement
-        
-        # Simulate different data availability for each hotel
-        if hotel == "Camden":
-            # Camden has data up to April 16
-            hotel_end_date = datetime(2026, 4, 16) if end_date > datetime(2025, 4, 16) else end_date
-        elif hotel == "Westin":
-            # Westin has data up to April 15
-            hotel_end_date = datetime(2026, 4, 15) if end_date > datetime(2025, 4, 15) else end_date
-        else:
-            # Other hotels have data up to today
-            hotel_end_date = end_date
-            
-        hotel_dates = pd.date_range(start=start_date, end=hotel_end_date, freq='D')
-        
-        for date in hotel_dates:
-            # Seasonal factor (higher in winter, lower in summer)
-            month = date.month
-            season_factor = 1.0 + 0.3 * np.cos((month - 1) * np.pi / 6)
-            
-            # Weekend factor (higher on weekends)
-            weekend_factor = 1.2 if date.weekday() >= 5 else 1.0
-            
-            # Year factor (current year uses less energy than previous based on hotel's improvement)
-            year_factor = improvement_factor if date.year == datetime.today().year else 1.0
-            
-            # Combine factors with random noise
-            daily_usage = base_usage * season_factor * weekend_factor * year_factor * np.random.uniform(0.9, 1.1)
-            
-            # Create a row for this hotel and date
-            row = {
-                'Date': date,
-                'Meter Point': hotel_mpan,
-                'Hotel': hotel,
-                'Total Usage': daily_usage,
+        cfg = configs[hotel]
+        hotel_mpan = next((m for m, h in mpan_to_hotel.items() if h == hotel), "unknown")
+        hotel_end  = end_date - timedelta(days=cfg["end_offset"])
+        dates = pd.date_range(start=start_date, end=hotel_end, freq='D')
+
+        for date in dates:
+            season  = 1.0 + 0.3 * np.cos((date.month - 1) * np.pi / 6)
+            weekend = 1.2 if date.weekday() >= 5 else 1.0
+            yfactor = cfg["improve"] if date.year == datetime.today().year else 1.0
+            usage   = cfg["base"] * season * weekend * yfactor * np.random.uniform(0.9, 1.1)
+            all_data.append({
+                'Date': date, 'Meter Point': hotel_mpan,
+                'Hotel': hotel, 'Total Usage': usage,
                 'Year': date.year
-            }
-                
-            all_data.append(row)
-    
-    # Create DataFrame from all rows
+            })
+
     return pd.DataFrame(all_data)
 
-# Find what dates all hotels have data for
+
+# ─── Date helpers ─────────────────────────────────────────────────────────────
 def find_available_dates(data, year):
-    """
-    Find the dates where all hotels have data for a given year
-    """
-    year_data = data[data['Year'] == year]
+    year_data  = data[data['Year'] == year]
     all_hotels = list(mpan_to_hotel.values())
-    
-    # Get all unique dates in the year
-    all_dates = sorted(year_data['Date'].unique())
-    
-    # For each date, check if all hotels have data
-    available_dates = []
+    all_dates  = sorted(year_data['Date'].unique())
+    available  = []
     for date in all_dates:
-        # Get hotels with data for this date
-        hotels_with_data = year_data[year_data['Date'] == date]['Hotel'].unique()
-        
-        # If all hotels have data for this date, add it to the list
-        if all(hotel in hotels_with_data for hotel in all_hotels):
-            # Convert to Python datetime object
-            if isinstance(date, np.datetime64):
-                date = pd.Timestamp(date).to_pydatetime()
-            elif isinstance(date, pd.Timestamp):
-                date = date.to_pydatetime()
-                
-            available_dates.append(date)
-    
-    return sorted(available_dates)
+        if all(h in year_data[year_data['Date'] == date]['Hotel'].values for h in all_hotels):
+            d = pd.Timestamp(date).to_pydatetime() if isinstance(date, (np.datetime64, pd.Timestamp)) else date
+            available.append(d)
+    return sorted(available)
 
-# Find matching days between years
+
 def find_matching_days(data, current_year, previous_year, start_date=None, end_date=None):
-    """
-    Find days that all hotels have data for in both years
-    """
-    # Get available dates for each year
-    current_year_dates = find_available_dates(data, current_year)
-    previous_year_dates = find_available_dates(data, previous_year)
-    
-    # Convert numpy.datetime64 objects to Python datetime objects if needed
-    current_year_dates = [pd.Timestamp(date).to_pydatetime() for date in current_year_dates]
-    previous_year_dates = [pd.Timestamp(date).to_pydatetime() for date in previous_year_dates]
-    
-    # Create month-day format for matching (ignoring year)
-    current_year_month_days = [date.strftime('%m-%d') for date in current_year_dates]
-    previous_year_month_days = [date.strftime('%m-%d') for date in previous_year_dates]
-    
-    # Find common month-days
-    common_keys = set(current_year_month_days).intersection(previous_year_month_days)
-    
-    # Filter to matching days only
-    matching_current_dates = [date for date in current_year_dates if date.strftime('%m-%d') in common_keys]
-    matching_previous_dates = [date for date in previous_year_dates if date.strftime('%m-%d') in common_keys]
-    
-    # If a date range is specified, filter to that range
-    if start_date and end_date:
-        matching_current_dates = [date for date in matching_current_dates if start_date <= date <= end_date]
-        
-        # Get corresponding dates from previous year
-        month_days_in_range = [date.strftime('%m-%d') for date in matching_current_dates]
-        matching_previous_dates = [date for date in matching_previous_dates if date.strftime('%m-%d') in month_days_in_range]
-    
-    return {
-        'current_dates': sorted(matching_current_dates),
-        'previous_dates': sorted(matching_previous_dates)
-    }
+    cy_dates = [pd.Timestamp(d).to_pydatetime() for d in find_available_dates(data, current_year)]
+    py_dates = [pd.Timestamp(d).to_pydatetime() for d in find_available_dates(data, previous_year)]
+    common   = set(d.strftime('%m-%d') for d in cy_dates) & set(d.strftime('%m-%d') for d in py_dates)
+    cy_match = [d for d in cy_dates if d.strftime('%m-%d') in common]
+    py_match = [d for d in py_dates if d.strftime('%m-%d') in common]
 
-# Calculate metrics using Canopy dashboard logic
+    if start_date and end_date:
+        cy_match = [d for d in cy_match if start_date <= d <= end_date]
+        mds      = {d.strftime('%m-%d') for d in cy_match}
+        py_match = [d for d in py_match if d.strftime('%m-%d') in mds]
+
+    return {'current_dates': sorted(cy_match), 'previous_dates': sorted(py_match)}
+
+
 def calculate_hotel_metrics(data, matched_dates):
-    """
-    Calculate simple metrics for each hotel using only the matched dates
-    """
-    # Target savings percentage
-    target_savings_percent = 10
-    
-    # Get current and previous year dates
-    current_dates = matched_dates['current_dates']
-    previous_dates = matched_dates['previous_dates']
-    
-    if not current_dates or not previous_dates:
+    TARGET = 10
+    cy, py = matched_dates['current_dates'], matched_dates['previous_dates']
+    if not cy or not py:
         return {}
-    
-    # Store results for each hotel
+
     metrics = {}
-    
-    # Get unique hotels
-    hotels = mpan_to_hotel.values()
-    
-    # Calculate metrics for each hotel
-    for hotel in hotels:
-        # Filter data for this hotel
-        hotel_data = data[data['Hotel'] == hotel]
-        
-        # Get current year data for matched days
-        current_data = hotel_data[hotel_data['Date'].isin(current_dates)]
-        
-        # Get previous year data for matched days
-        previous_data = hotel_data[hotel_data['Date'].isin(previous_dates)]
-        
-        # Calculate total usage
-        current_total = current_data['Total Usage'].sum()
-        previous_total = previous_data['Total Usage'].sum()
-        
-        # Calculate percent change - using Canopy calculation logic
-        if previous_total == 0:
-            percent_change = 0
+    for hotel in mpan_to_hotel.values():
+        hd    = data[data['Hotel'] == hotel]
+        cur   = hd[hd['Date'].isin(cy)]['Total Usage'].sum()
+        prev  = hd[hd['Date'].isin(py)]['Total Usage'].sum()
+        pct   = 0 if prev == 0 else ((cur - prev) / prev) * 100
+        tgt   = prev * (1 - TARGET / 100)
+        if cur < prev:
+            prog    = min(100, ((prev - cur) / (prev - tgt)) * 100)
+            saved   = prev - cur
         else:
-            percent_change = ((current_total - previous_total) / previous_total) * 100
-        
-        # Calculate progress toward 10% savings goal - using Canopy calculation logic
-        target_usage = previous_total * (1 - target_savings_percent/100)
-        
-        # If there are savings (current_total < previous_total)
-        if current_total < previous_total:
-            # Calculate how much of the 10% goal we've achieved
-            # If we've saved exactly 10%, progress should be 100%
-            # If we've saved less than 10%, progress should be proportional
-            progress_percentage = min(100, ((previous_total - current_total) / (previous_total - target_usage)) * 100)
-            kwh_saved = previous_total - current_total
-        else:
-            # No savings or increased usage
-            progress_percentage = 0
-            kwh_saved = 0
-        
-        # Store metrics
+            prog, saved = 0, 0
+
         metrics[hotel] = {
-            'current_total': current_total,
-            'previous_total': previous_total,
-            'percent_change': percent_change,
-            'progress_percentage': progress_percentage,
-            'energy_reduction': abs(min(0, percent_change)),  # Only count negative percent changes as reductions
-            'target_savings_percent': target_savings_percent,
-            'kwh_saved': kwh_saved
+            'current_total':       cur,
+            'previous_total':      prev,
+            'percent_change':      pct,
+            'progress_percentage': prog,
+            'energy_reduction':    abs(min(0, pct)),
+            'target_savings_percent': TARGET,
+            'kwh_saved':           saved,
         }
-    
     return metrics
 
-# Create a clear race bar chart
-def create_simple_race_bar(metrics):
-    # Sort hotels by energy reduction (higher reduction = better position)
+
+def get_available_months(data, year):
+    dates = find_available_dates(data, year)
+    return sorted({d.month for d in dates}) if dates else []
+
+
+def format_period_option(kind, value=None, month_num=None, year=None):
+    if kind == "ytd":        return "🔄 Year to Date"
+    if kind == "last_days":  return f"📊 Last {value} Days"
+    if kind == "this_month": return "📆 This Month"
+    if kind == "prev_month": return "📆 Previous Month"
+    if kind == "specific_month":
+        return f"📆 {datetime(year, month_num, 1).strftime('%B')} {year}"
+    return "📅 Custom Period"
+
+
+# ─── Charts ──────────────────────────────────────────────────────────────────
+def create_race_chart(metrics):
     sorted_hotels = sorted(metrics.items(), key=lambda x: x[1]['energy_reduction'], reverse=True)
-    
-    # Create data for the chart
-    hotel_names = []
-    reductions = []
-    progress_values = []
-    colors = []
-    
-    for hotel, hotel_metrics in sorted_hotels:
-        # Get the actual reduction percentage
-        actual_reduction = hotel_metrics['energy_reduction']
-        
-        hotel_names.append(f"{hotel_emojis.get(hotel, '🏨')} {hotel}")
-        reductions.append(actual_reduction)
-        progress_values.append(hotel_metrics['progress_percentage'])
-        colors.append(hotel_colors.get(hotel, '#002d72'))
-    
-    # Create figure
+    names, reds, progs, colors_list = [], [], [], []
+    for hotel, m in sorted_hotels:
+        names.append(f"{hotel_emojis.get(hotel,'🏨')} {hotel}")
+        reds.append(m['energy_reduction'])
+        progs.append(m['progress_percentage'])
+        colors_list.append(hotel_colors.get(hotel, '#002d72'))
+
     fig = go.Figure()
-    
-    # Add bar for each hotel
-    for i, hotel in enumerate(hotel_names):
+    for i, name in enumerate(names):
         fig.add_trace(go.Bar(
-            y=[hotel],
-            x=[reductions[i]],
+            y=[name], x=[reds[i]],
             orientation='h',
-            marker_color=colors[i],
-            text=[f"{reductions[i]:.1f}% reduction"],
+            marker=dict(color=colors_list[i], line=dict(width=0)),
+            text=[f"  {reds[i]:.1f}%"],
             textposition='outside',
-            hoverinfo='text',
-            hovertext=[f"{hotel}: {reductions[i]:.1f}% reduction<br>{progress_values[i]:.0f}% of 10% goal"],
-            name=hotel
+            textfont=dict(size=13, color='#0a2540', family='DM Serif Display, Georgia, serif'),
+            hovertemplate=f"<b>{name}</b><br>Reduction: {reds[i]:.1f}%<br>Goal progress: {progs[i]:.0f}%<extra></extra>",
+            name=name,
+            width=0.55,
         ))
-    
-    # Add finish line at 10%
-    fig.add_shape(
-        type="line",
-        x0=10, y0=-0.5,
-        x1=10, y1=len(hotel_names)-0.5,
-        line=dict(
-            color="red",
-            width=3,
-            dash="dash",
-        )
-    )
-    
-    # Add label for finish line
-    fig.add_annotation(
-        x=10,
-        y=len(hotel_names),
-        text="🏁 10% Goal",
-        showarrow=False,
-        font=dict(color="red", size=16),
-        yshift=10
-    )
-    
-    # Update layout
+
+    max_x = max(max(reds) + 3, 12)
+
+    # Finish-line ribbon
+    fig.add_shape(type="rect", x0=10, y0=-0.5, x1=10.15, y1=len(names) - 0.5,
+                  fillcolor="rgba(239,68,68,0.15)", line=dict(width=0))
+    fig.add_shape(type="line", x0=10, y0=-0.5, x1=10, y1=len(names) - 0.5,
+                  line=dict(color="#ef4444", width=2.5, dash="dash"))
+    fig.add_annotation(x=10, y=len(names) - 0.4, text="🏁 10% Target",
+                       showarrow=False, font=dict(color="#ef4444", size=12, family="DM Serif Display, Georgia, serif"),
+                       yshift=14, xanchor="center")
+
     fig.update_layout(
-        title="Who's Saving the Most Energy?",
-        xaxis_title="Energy Reduction (%)",
-        margin=dict(l=10, r=60, t=40, b=10),
-        height=350,
+        title=dict(text="<b>🏁 The Race to 10%</b>", font=dict(family="DM Serif Display, Georgia, serif", size=16, color="#0a2540"), x=0),
+        margin=dict(l=0, r=50, t=44, b=10),
+        height=280,
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        xaxis=dict(
-            range=[0, max(max(reductions)+2, 11)],
-            gridcolor='#e6eef7',
-        ),
-        yaxis=dict(
-            autorange='reversed'
-        ),
-        showlegend=False
+        xaxis=dict(range=[0, max_x], gridcolor='#e2e8f0', ticksuffix='%',
+                   tickfont=dict(size=11, color='#64748b', family='DM Serif Display, Georgia, serif'), showline=False),
+        yaxis=dict(autorange='reversed', tickfont=dict(size=12, color='#0a2540', family='DM Serif Display, Georgia, serif'), showline=False),
+        showlegend=False,
+        bargap=0.35,
     )
-    
     return fig
 
-# Create a simple weekly pattern chart
-def create_weekly_pattern(data, current_start, current_end):
-    # Filter data to current period
-    period_data = data[(data['Date'] >= current_start) & (data['Date'] <= current_end)].copy()
-    
-    # Add day of week column
+
+def create_weekly_chart(data, start, end):
+    period_data = data[(data['Date'] >= start) & (data['Date'] <= end)].copy()
     period_data['day_of_week'] = period_data['Date'].dt.dayofweek
-    period_data['day_name'] = period_data['Date'].dt.day_name()
-    
-    # Aggregate by day of week
-    daily_totals = period_data.groupby(['day_of_week', 'day_name'])['Total Usage'].mean().reset_index()
-    
-    # Order days correctly
-    days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    daily_totals['day_name'] = pd.Categorical(daily_totals['day_name'], categories=days_order, ordered=True)
-    daily_totals = daily_totals.sort_values('day_name')
-    
-    # Create bar chart with gradient colors
-    fig = px.bar(
-        daily_totals, 
-        x='day_name', 
-        y='Total Usage',
-        color='Total Usage',
-        color_continuous_scale=['#e6f7e9', '#00a74a'],
-        labels={'Total Usage': 'Energy (kWh)', 'day_name': ''},
-        category_orders={"day_name": days_order},
-        title="When Do We Use Most Energy?"
-    )
-    
-    # Find highest usage day
-    highest_day = daily_totals.loc[daily_totals['Total Usage'].idxmax(), 'day_name']
-    lowest_day = daily_totals.loc[daily_totals['Total Usage'].idxmin(), 'day_name']
-    
-    # Add annotations for highest and lowest days
-    fig.add_annotation(
-        x=highest_day,
-        y=daily_totals[daily_totals['day_name']==highest_day]['Total Usage'].iloc[0],
-        text="Highest",
-        showarrow=True,
-        arrowhead=1,
-        ax=0,
-        ay=-40
-    )
-    
-    fig.add_annotation(
-        x=lowest_day,
-        y=daily_totals[daily_totals['day_name']==lowest_day]['Total Usage'].iloc[0],
-        text="Lowest",
-        showarrow=True,
-        arrowhead=1,
-        ax=0,
-        ay=-40
-    )
-    
+    period_data['day_name']    = period_data['Date'].dt.day_name()
+
+    daily = period_data.groupby(['day_of_week', 'day_name'])['Total Usage'].mean().reset_index()
+    order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    daily['day_name'] = pd.Categorical(daily['day_name'], categories=order, ordered=True)
+    daily = daily.sort_values('day_name')
+
+    # Short day labels for mobile
+    daily['day_short'] = daily['day_name'].astype(str).str[:3]
+
+    max_val = daily['Total Usage'].max()
+    min_val = daily['Total Usage'].min()
+    bar_colors = [
+        "#ef4444" if v == max_val else ("#00a74a" if v == min_val else "#3b82f6")
+        for v in daily['Total Usage']
+    ]
+
+    fig = go.Figure(go.Bar(
+        x=daily['day_short'],
+        y=daily['Total Usage'],
+        marker_color=bar_colors,
+        marker_line=dict(width=0),
+        width=0.6,
+        hovertemplate='<b>%{x}</b><br>Avg: %{y:,.0f} kWh<extra></extra>',
+    ))
+
+    highest = daily.loc[daily['Total Usage'].idxmax(), 'day_short']
+    lowest  = daily.loc[daily['Total Usage'].idxmin(), 'day_short']
+
+    for day, label, color in [(highest, "▲ High", "#ef4444"), (lowest, "▼ Low", "#00a74a")]:
+        val = daily[daily['day_short'] == day]['Total Usage'].iloc[0]
+        fig.add_annotation(x=day, y=val, text=label, showarrow=False,
+                           yshift=12, font=dict(size=10, color=color, family="DM Serif Display, Georgia, serif"))
+
     fig.update_layout(
-        coloraxis_showscale=False,
-        margin=dict(l=10, r=10, t=40, b=10),
-        height=350,
+        title=dict(text="<b>📅 Energy by Day of Week</b>", font=dict(family="DM Serif Display, Georgia, serif", size=14, color="#0a2540"), x=0),
+        margin=dict(l=0, r=0, t=40, b=10),
+        height=230,
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        showlegend=False
+        xaxis=dict(showline=False, gridcolor='rgba(0,0,0,0)', tickfont=dict(size=11, family='DM Serif Display, Georgia, serif')),
+        yaxis=dict(gridcolor='#e2e8f0', tickfont=dict(size=10, color='#94a3b8', family='DM Serif Display, Georgia, serif'),
+                   ticksuffix=' kWh', showline=False),
+        showlegend=False,
     )
-    
-    return fig, highest_day, lowest_day
+    return fig, highest, lowest
 
-# Get available months from data
-def get_available_months(data, year):
+
+# ─── Hotel rank card HTML ─────────────────────────────────────────────────────
+def hotel_card_html(rank, hotel, metrics_data):
+    m          = metrics_data[hotel]
+    medal      = rank_medals[rank]
+    css_class  = rank_classes[rank]
+    emoji      = hotel_emojis.get(hotel, "🏨")
+    reduction  = m['energy_reduction']
+    pct_change = m['percent_change']
+    prog       = m['progress_percentage']
+    color      = hotel_colors.get(hotel, "#002d72")
+
+    pct_class = "negative" if pct_change > 0 else ("neutral" if pct_change == 0 else "")
+    pct_sign  = "▲ " if pct_change > 0 else ("▼ " if pct_change < 0 else "")
+    pct_disp  = f"{pct_sign}{abs(pct_change):.1f}%"
+
+    # Track fill: cap at ~95% visually, goal line at 100% of the 10% goal
+    # Map prog (0-100) to bar width within track, goal line at 100%
+    fill_w    = min(prog, 100)
+    track_pct = fill_w  # percentage of bar to fill
+
+    # Progress bar gradient
+    bar_color = (
+        f"linear-gradient(90deg, {color}, #00a74a)"
+        if pct_change < 0
+        else f"linear-gradient(90deg, #ef4444, #f97316)"
+    )
+
+    goal_hit = '<div class="goal-hit">🎉 Goal reached!</div>' if prog >= 100 else ""
+
+    return f"""
+    <div class="hotel-card {css_class}">
+      <div class="hotel-card-header">
+        <div style="display:flex;align-items:center;gap:0.4rem;">
+          <span class="hotel-rank">{medal}</span>
+          <span class="hotel-badge">{emoji}</span>
+          <span class="hotel-name">{hotel}</span>
+        </div>
+        <span class="hotel-pct {pct_class}">{pct_disp}</span>
+      </div>
+      <div class="track-wrap">
+        <div class="track-fill" style="width:{track_pct}%;background:{bar_color};"></div>
+        <div class="track-goal-line" style="left:min(100%,100%);"></div>
+      </div>
+      <div class="track-label-row">
+        <span>{prog:.0f}% of 10% goal</span>
+        <span style="color:#ef4444;">🏁 10%</span>
+      </div>
+      {goal_hit}
+    </div>
     """
-    Get months that have data available for all hotels
-    """
-    dates = find_available_dates(data, year)
-    if not dates:
-        return []
-    
-    # Extract unique months
-    months = sorted(list(set([date.month for date in dates])))
-    return months
-
-# Format period option with emoji
-def format_period_option(period_type, period_value=None, month_num=None, year=None):
-    """
-    Format period options with emojis
-    """
-    emoji_map = {
-        "ytd": "🔄",
-        "last_days": "📊",
-        "this_month": "📆",
-        "prev_month": "📆",
-        "specific_month": "📆"
-    }
-    
-    emoji = emoji_map.get(period_type, "📅")
-    
-    if period_type == "ytd":
-        return f"{emoji} Year to Date"
-    elif period_type == "last_days":
-        return f"{emoji} Last {period_value} Days"
-    elif period_type == "this_month":
-        return f"{emoji} This Month"
-    elif period_type == "prev_month":
-        return f"{emoji} Previous Month"
-    elif period_type == "specific_month":
-        month_name = datetime(year, month_num, 1).strftime("%B")
-        return f"{emoji} {month_name} {year}"
-    
-    return f"{emoji} Custom Period"
 
 
-
-# Main dashboard
+# ─── Main ────────────────────────────────────────────────────────────────────
 def main():
-    # Title with fun emoji
-    st.title("🏆 Electricity Hotel Race")
-    
-    # Load data
-    data = load_data()
-    
-    # Define time periods
-    today = datetime.today()
+    # ── Hero ──
+    st.markdown("""
+    <div class="hero">
+      <span class="lightning">⚡</span>
+      <div class="hero-title">Hotel Energy Race</div>
+      <div class="hero-subtitle">Who's cutting the most electricity? 10% savings wins. 🏆</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Load data ──
+    with st.spinner("Loading data…"):
+        data = load_data()
+
+    today        = datetime.today()
     current_year = today.year
-    previous_year = current_year - 1
-    
-    # Get available months for dynamic dropdown
-    current_year_months = get_available_months(data, current_year)
-    
-    # Create dynamic period options
+    previous_year= current_year - 1
+
+    current_months = get_available_months(data, current_year)
     period_options = [
         format_period_option("ytd"),
         format_period_option("last_days", 7),
         format_period_option("last_days", 30),
         format_period_option("this_month"),
-        format_period_option("prev_month")
+        format_period_option("prev_month"),
     ]
-    
-    # Add available months dynamically
-    for month in current_year_months:
-        period_options.append(format_period_option("specific_month", month_num=month, year=current_year))
-    
-    # Period selector with fun emojis
-    # Period selector with better alignment to info box
-    col1, col2 = st.columns([1, 3])
+    for m in current_months:
+        period_options.append(format_period_option("specific_month", month_num=m, year=current_year))
 
-    with col1:
-        st.write("") # Add a tiny bit of padding if needed
-        period = st.selectbox(
-            "📅 Select time period",
-            options=period_options,
-            index=1  # Default to last 7 days
-        )
-        period_text = period.split(" ", 1)[1]  # Remove the emoji prefix
+    # ── Period selector ──
+    st.markdown('<div class="selector-card">', unsafe_allow_html=True)
+    period = st.selectbox("📅 Select time period", options=period_options, index=1, label_visibility="visible")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    with col2:
-        # Fun energy fact - the st.info box will now align better with the dropdown
-        st.info("**💡 Did You Know?** " + random.choice([
-            "A 1°C reduction in room temperature saves up to 8% on energy costs!",
-            "Hotels typically spend 6-10% of their operating costs on energy!",
-            "LED lights use up to 90% less energy than traditional bulbs!",
-            "Only 3-5% of hotel guests choose to reuse towels - which uses a lot of energy!"
-        ]))
-        
-    # Parse selected period to determine date range
+    # ── Fun fact ──
+    fact = random.choice(energy_facts)
+    st.markdown(f'<div class="fact-pill">💡 <strong>Did you know?</strong> {fact}</div>', unsafe_allow_html=True)
+
+    period_text = period.split(" ", 1)[1]
+
+    # ── Parse dates ──
     if "Year to Date" in period:
-        period_end = today
-        period_start = datetime(current_year, 1, 1)
+        period_end, period_start = today, datetime(current_year, 1, 1)
     elif "Last 7 Days" in period:
-        period_end = today
-        period_start = today - timedelta(days=7)
+        period_end, period_start = today, today - timedelta(days=7)
     elif "Last 30 Days" in period:
-        period_end = today
-        period_start = today - timedelta(days=30)
+        period_end, period_start = today, today - timedelta(days=30)
     elif "This Month" in period:
         period_start = datetime(today.year, today.month, 1)
-        period_end = today
+        period_end   = today
     elif "Previous Month" in period:
-        # Get the first day of current month
-        first_day_current_month = datetime(today.year, today.month, 1)
-        # Then go back one day to get the last day of previous month
-        last_day_prev_month = first_day_current_month - timedelta(days=1)
-        # Then get the first day of previous month
-        period_start = datetime(last_day_prev_month.year, last_day_prev_month.month, 1)
-        period_end = last_day_prev_month
+        first = datetime(today.year, today.month, 1)
+        last  = first - timedelta(days=1)
+        period_start = datetime(last.year, last.month, 1)
+        period_end   = last
     else:
-        # It's a specific month
-        month_name = period_text.split()[0]  # E.g., "January"
-        month_num = datetime.strptime(month_name, "%B").month
-        year = int(period_text.split()[1])  # E.g., "2025"
-        
-        period_start = datetime(year, month_num, 1)
-        # Get the last day of the month
-        if month_num == 12:
-            next_month_year = year + 1
-            next_month = 1
-        else:
-            next_month_year = year
-            next_month = month_num + 1
-            
-        period_end = datetime(next_month_year, next_month, 1) - timedelta(days=1)
-    
-    # Find days that have data for all hotels in both years
-    matched_dates = find_matching_days(data, current_year, previous_year, period_start, period_end)
-    
-    # Calculate metrics using ONLY the matched days
-    metrics = calculate_hotel_metrics(data, matched_dates)
-    
+        mname = period_text.split()[0]
+        yr    = int(period_text.split()[1])
+        mn    = datetime.strptime(mname, "%B").month
+        period_start = datetime(yr, mn, 1)
+        nxt_yr = yr + 1 if mn == 12 else yr
+        nxt_mn = 1 if mn == 12 else mn + 1
+        period_end = datetime(nxt_yr, nxt_mn, 1) - timedelta(days=1)
+
+    matched = find_matching_days(data, current_year, previous_year, period_start, period_end)
+    metrics = calculate_hotel_metrics(data, matched)
+
     if not metrics:
         st.error("⚠️ No data available for this period.")
         st.stop()
-    
-    # Calculate overall metrics
-    total_kwh_saved = sum(hotel_metrics['kwh_saved'] for hotel_metrics in metrics.values())
-    
-    # Format date display text
-    if "Year to Date" in period:
-        date_text = f"Year to Date {current_year} vs {previous_year}"
-    elif "Last" in period:
-        days_text = "7" if "7" in period else "30"
-        date_text = f"Last {days_text} Days {current_year} vs {previous_year}"
-    elif "This Month" in period:
-        month_name = today.strftime("%B")
-        date_text = f"{month_name} {current_year} vs {month_name} {previous_year}"
-    elif "Previous Month" in period:
-        # Get previous month name
-        first_day_current_month = datetime(today.year, today.month, 1)
-        last_day_prev_month = first_day_current_month - timedelta(days=1)
-        month_name = last_day_prev_month.strftime("%B")
-        date_text = f"{month_name} {current_year} vs {month_name} {previous_year}"
-    else:
-        # Specific month
-        month_name = period_text.split()[0]  # E.g., "January"
-        date_text = f"{month_name} {current_year} vs {month_name} {previous_year}"
-    
-    # Create 3 big metrics in a row
-    metric1, metric2, metric3 = st.columns(3)
-    
-    with metric1:
-        # Add date information
-        if len(matched_dates['current_dates']) > 0:
-            date_info = f"{matched_dates['current_dates'][0].strftime('%b %d')} - {matched_dates['current_dates'][-1].strftime('%b %d')}"
-        else:
-            date_info = "No matching days"
-        
-        st.metric(
-            "Total Energy Saved",
-            f"{total_kwh_saved:,.0f} kWh",
-            f"Comparing {date_text}"
-        )
-    
-    with metric2:
-        # Calculate CO2 savings
-        co2_saved = total_kwh_saved * ELECTRICITY_FACTOR
-        st.metric(
-            "CO₂ Emissions Avoided",
-            f"{co2_saved:,.0f} kg",
-            "Like planting trees!"
-        )
-    
-    with metric3:
-        # Calculate cost savings assuming £0.30 per kWh
-        cost_saved = total_kwh_saved * 0.30
-        st.metric(
-            "Money Saved",
-            f"£{cost_saved:,.0f}",
-            "Better for the budget"
-        )
-    
-    # Explanation about the goal
-    st.markdown("""
-    ### 🎯 Our Challenge: Save 10% Energy vs Last Year
-    
-    Each hotel is trying to reduce energy use by 10% compared to the same days last year.
-    The hotel that reaches or exceeds 10% first wins the challenge!
-    """)
-    
-    # 1. RACE VISUALIZATION
-    race_chart = create_simple_race_bar(metrics)
-    st.plotly_chart(race_chart, use_container_width=True)
-    
-    # Sort hotels by reduction
-    sorted_hotels = sorted(metrics.items(), key=lambda x: x[1]['energy_reduction'], reverse=True)
-    leader = sorted_hotels[0][0] if sorted_hotels else "None"
-    leader_reduction = sorted_hotels[0][1]['energy_reduction'] if sorted_hotels else 0
-    
-    # Show leader and runner up
-    st.markdown(f"**Current Leader:** {hotel_emojis.get(leader, '🏨')} **{leader}** with **{leader_reduction:.1f}%** energy reduction")
-    
-    # Create two columns for the remaining charts
-    col1, col2 = st.columns(2)
-    
-    # Weekly Pattern Chart
-    with col1:
-        try:
-            weekly_pattern, highest_day, lowest_day = create_weekly_pattern(data, period_start, period_end)
-            st.plotly_chart(weekly_pattern, use_container_width=True)
-            
-            # Add simple insight
-            st.markdown(f"**Tip:** Focus on saving energy on **{highest_day}s** when we use the most!")
-        except Exception as e:
-            st.error("Could not create pattern chart.")
-    
-    # Tips and Next Steps
-    with col2:
-        st.markdown("### 💡 Quick Energy-Saving Tips")
-        
-        # Create three columns for tips
-        tip_cols = st.columns(3)
-        
-        # Add first three tips
-        for i in range(3):
-            if i < len(energy_tips):
-                with tip_cols[i]:
-                    st.markdown(f"### {energy_tips[i]['emoji']}")
-                    st.markdown(f"**{energy_tips[i]['tip']}**")
-        
-        # Add more information
-        st.markdown("### 🚀 What's Next?")
-        st.markdown("""
-        1. Share these insights with your team
-        2. Focus on high-usage days
-        3. Implement at least one tip this week
-        4. Check back to see your progress!!
-        """)
-    
-    # # Add custom date range option
-    # if st.button("📅 Want to select a custom date range?"):
-    #     st.session_state.show_custom_dates = True
-    
-    # # Show custom date selector if requested
-    # if 'show_custom_dates' in st.session_state and st.session_state.show_custom_dates:
-    #     st.markdown("### 📅 Custom Date Range")
-    #     custom_col1, custom_col2 = st.columns(2)
-        
-    #     with custom_col1:
-    #         min_date = data['Date'].min().to_pydatetime()
-    #         max_date = data['Date'].max().to_pydatetime()
-            
-    #         # Only include dates where we have data for all hotels in both years
-    #         custom_start = st.date_input("Start Date", value=period_start, min_value=min_date, max_value=max_date)
-        
-    #     with custom_col2:
-    #         custom_end = st.date_input("End Date", value=period_end, min_value=min_date, max_value=max_date)
-        
-    #     if st.button("Apply Custom Date Range"):
-    #         # Convert to datetime
-    #         custom_start_dt = datetime.combine(custom_start, datetime.min.time())
-    #         custom_end_dt = datetime.combine(custom_end, datetime.min.time())
-            
-    #         # Redirect to the same page but with the custom date range
-    #         st.experimental_rerun()
-    #         # In a real app, you would store these dates in session state and use them
-    #         # st.session_state.custom_start = custom_start_dt
-    #         # st.session_state.custom_end = custom_end_dt
-    
-    # Footer info
-    st.caption(f"4C Group Electricity Data | Showing data from {date_info} | {len(matched_dates['current_dates'])} days compared")
 
-    # # Add data refresh information
-    # last_refresh = datetime.now().strftime("%b %d, %Y at %H:%M")
-    # st.caption(f"Data last refreshed: {last_refresh}")
+    # ── Date text ──
+    if matched['current_dates']:
+        date_info = (f"{matched['current_dates'][0].strftime('%b %d')} – "
+                     f"{matched['current_dates'][-1].strftime('%b %d')}")
+    else:
+        date_info = "No matching days"
+
+    if "Year to Date" in period:
+        compare_text = f"YTD {current_year} vs {previous_year}"
+    elif "Last" in period:
+        d = "7" if "7" in period else "30"
+        compare_text = f"Last {d} days vs same period last year"
+    elif "This Month" in period:
+        compare_text = f"{today.strftime('%B')} {current_year} vs {previous_year}"
+    elif "Previous Month" in period:
+        first = datetime(today.year, today.month, 1) - timedelta(days=1)
+        compare_text = f"{first.strftime('%B')} {current_year} vs {previous_year}"
+    else:
+        compare_text = f"{period_text.split()[0]} {current_year} vs {previous_year}"
+
+    # ── KPI row ──
+    total_kwh_saved = sum(m['kwh_saved'] for m in metrics.values())
+    co2_saved       = total_kwh_saved * ELECTRICITY_FACTOR
+    cost_saved      = total_kwh_saved * 0.22
+    num_days        = len(matched['current_dates'])
+
+    sorted_hotels   = sorted(metrics.items(), key=lambda x: x[1]['energy_reduction'], reverse=True)
+    leader, leader_m = sorted_hotels[0]
+    leader_pct      = leader_m['energy_reduction']
+    leader_emoji    = hotel_emojis.get(leader, "🏨")
+
+    st.markdown(f"""
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <span class="kpi-icon">⚡</span>
+        <div class="kpi-value">{total_kwh_saved:,.0f}</div>
+        <div class="kpi-label">kWh Saved</div>
+        <div class="kpi-sub">{compare_text}</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">🌿</span>
+        <div class="kpi-value">{co2_saved:,.0f}</div>
+        <div class="kpi-label">kg CO₂ Avoided</div>
+        <div class="kpi-sub">Good for the planet</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">💷</span>
+        <div class="kpi-value">£{cost_saved:,.0f}</div>
+        <div class="kpi-label">Money Saved</div>
+        <div class="kpi-sub">At £0.22 / kWh</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">{leader_emoji}</span>
+        <div class="kpi-value">{leader_pct:.1f}%</div>
+        <div class="kpi-label">Leader</div>
+        <div class="kpi-sub">{leader}</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Race chart ──
+    race_fig = create_race_chart(metrics)
+    st.plotly_chart(race_fig, use_container_width=True, config={"displayModeBar": False})
+
+    # ── Leaderboard cards ──
+    st.markdown('<div class="section-heading">🏅 Leaderboard</div>', unsafe_allow_html=True)
+    cards_html = ""
+    for rank, (hotel, _) in enumerate(sorted_hotels):
+        cards_html += hotel_card_html(rank, hotel, metrics)
+    st.markdown(cards_html, unsafe_allow_html=True)
+
+    # ── Weekly pattern ──
+    try:
+        weekly_fig, highest_day, lowest_day = create_weekly_chart(data, period_start, period_end)
+        st.plotly_chart(weekly_fig, use_container_width=True, config={"displayModeBar": False})
+        st.markdown(
+            f'<p style="font-size:.83rem;color:#64748b;margin:-0.5rem 0 1rem;">'
+            f'⚠️ <b>{highest_day}</b> is your highest-usage day — focus efforts there!</p>',
+            unsafe_allow_html=True
+        )
+    except Exception:
+        pass
+
+    # ── Tips ──
+    st.markdown('<div class="section-heading">💡 Quick Wins</div>', unsafe_allow_html=True)
+    tips_html = '<div class="tips-grid">'
+    for tip in energy_tips:
+        tips_html += f'<div class="tip-card"><span class="tip-emoji">{tip["emoji"]}</span>{tip["tip"]}</div>'
+    tips_html += '</div>'
+    st.markdown(tips_html, unsafe_allow_html=True)
+
+    # ── Next steps ──
+    st.markdown("""
+    <div class="next-steps">
+      <h4>🚀 Keep the momentum going</h4>
+      <div class="next-step-item"><span class="step-num">1</span> Share the leaderboard with your team today</div>
+      <div class="next-step-item"><span class="step-num">2</span> Pick one tip above and act on it this week</div>
+      <div class="next-step-item"><span class="step-num">3</span> Focus on high-usage days highlighted above</div>
+      <div class="next-step-item"><span class="step-num">4</span> Check back next week to track progress 📈</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Footer ──
+    st.markdown(
+        f'<div class="dash-footer">4C Group · Electricity data · {date_info} · {num_days} days compared</div>',
+        unsafe_allow_html=True
+    )
+
 
 if __name__ == "__main__":
     main()
