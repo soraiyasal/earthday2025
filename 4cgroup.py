@@ -195,10 +195,10 @@ def generate_simulated_data():
         # Simulate different data availability for each hotel
         if hotel == "Camden":
             # Camden has data up to April 16
-            hotel_end_date = datetime(2025, 4, 16) if end_date > datetime(2025, 4, 16) else end_date
+            hotel_end_date = datetime(2026, 4, 16) if end_date > datetime(2025, 4, 16) else end_date
         elif hotel == "Westin":
             # Westin has data up to April 15
-            hotel_end_date = datetime(2025, 4, 15) if end_date > datetime(2025, 4, 15) else end_date
+            hotel_end_date = datetime(2026, 4, 15) if end_date > datetime(2025, 4, 15) else end_date
         else:
             # Other hotels have data up to today
             hotel_end_date = end_date
