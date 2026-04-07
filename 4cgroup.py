@@ -623,12 +623,6 @@ def main():
         <div class="kpi-label">kWh Saved</div>
         <div class="kpi-sub">{compare_text}</div>
       </div>
-    #   <div class="kpi-card">
-    #     <span class="kpi-icon">🌿</span>
-    #     <div class="kpi-value">{co2_saved:,.0f}</div>
-    #     <div class="kpi-label">kg CO₂ Avoided</div>
-    #     <div class="kpi-sub">Good for the planet</div>
-    #   </div>
       <div class="kpi-card">
         <span class="kpi-icon">💷</span>
         <div class="kpi-value">£{cost_saved:,.0f}</div>
