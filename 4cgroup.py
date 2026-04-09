@@ -544,7 +544,7 @@ def main():
 
     # ── Period selector ──
     st.markdown('<div class="selector-card">', unsafe_allow_html=True)
-    period = st.selectbox("📅 Select time period", options=period_options, index=1, label_visibility="visible")
+    period = st.selectbox("📅 Select time period", options=period_options, index=3, label_visibility="visible")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Fun fact ──
