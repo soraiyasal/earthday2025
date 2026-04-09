@@ -1157,6 +1157,7 @@ font-weight: 600;
         period = st.selectbox(
             "",
             options=[
+                "This Month",
                 "Year to Date",
                 "Last 7 Days", 
                 "Last 30 Days"
@@ -1169,7 +1170,10 @@ font-weight: 600;
 
         
     # Set date ranges based on selection
-    if period == "Last 7 Days":
+    if period == "This Month":
+        current_end = today
+        current_start = datetime(today.year, today.month, 1)
+    elif period == "Last 7 Days":
         current_end = today
         current_start = today - timedelta(days=7)
     elif period == "Last 30 Days":
@@ -1525,5 +1529,3 @@ chip.addEventListener('mouseout', function() {
 
 if __name__ == "__main__":
     main()
-
-
