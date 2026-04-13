@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import sqlite3
 import random
+import os
 
 # ─── Page config ────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -225,11 +226,14 @@ energy_facts = [
     "Fixing a dripping hot-water tap can save **9,000 litres** per year.",
 ]
 
+# ─── DB path (absolute, so it always resolves correctly) ─────────────────────
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'electricity_data.db')
+
 # ─── Data loading ─────────────────────────────────────────────────────────────
-@st.cache_data(show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)   # ← re-queries DB every 5 minutes
 def load_data():
     try:
-        conn = sqlite3.connect('electricity_data.db')
+        conn = sqlite3.connect(DB_PATH)
         query = """
         SELECT strftime('%Y-%m-%d', Date) as Date,
                [Meter Point],
@@ -475,12 +479,9 @@ def hotel_card_html(rank, hotel, metrics_data):
     pct_sign  = "▲ " if pct_change > 0 else ("▼ " if pct_change < 0 else "")
     pct_disp  = f"{pct_sign}{abs(pct_change):.1f}%"
 
-    # Track fill: cap at ~95% visually, goal line at 100% of the 10% goal
-    # Map prog (0-100) to bar width within track, goal line at 100%
     fill_w    = min(prog, 100)
-    track_pct = fill_w  # percentage of bar to fill
+    track_pct = fill_w
 
-    # Progress bar gradient
     bar_color = (
         f"linear-gradient(90deg, {color}, #00a74a)"
         if pct_change < 0
@@ -542,10 +543,18 @@ def main():
     for m in current_months:
         period_options.append(format_period_option("specific_month", month_num=m, year=current_year))
 
-    # ── Period selector ──
-    st.markdown('<div class="selector-card">', unsafe_allow_html=True)
-    period = st.selectbox("📅 Select time period", options=period_options, index=3, label_visibility="visible")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # ── Period selector + manual refresh ──
+    col1, col2 = st.columns([5, 1])
+    with col1:
+        st.markdown('<div class="selector-card">', unsafe_allow_html=True)
+        period = st.selectbox("📅 Select time period", options=period_options, index=3, label_visibility="visible")
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div style='padding-top:1.85rem;'>", unsafe_allow_html=True)
+        if st.button("🔄", help="Force refresh data from DB"):
+            st.cache_data.clear()
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # ── Fun fact ──
     fact = random.choice(energy_facts)
